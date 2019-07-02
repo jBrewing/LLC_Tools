@@ -53,7 +53,7 @@ print('data retreived.')
 
 # merge two dataframes into one, using time as the index.
 mainTest = pd.merge(main, main2, on='time')
-mainTest = mainTest.truncate(after=pd.Timestamp('2019-03-28T12:00:00'))
+mainTest = mainTest.truncate(after=pd.Timestamp('2019-03-27T13:56:00'))
 
 # truncate Main dataset for testing.  Trim to 100 records
 mainTest2 = mainTest.truncate(after=pd.Timestamp('2019-03-23T12:02:00'))
@@ -65,9 +65,17 @@ print('calculating new values')
 for i, row in mainTest.iterrows():
     x = row['hotInTemp_x']
     y = row['hotInTemp_y']
-    if x < 45:
-        z = 8.25122766 + 0.8218035674*y
+    z = 8.25122766 + 0.8218035674*y
     mainTest.at[i, 'hotInTemp_x'] = z
+
+#for i, row in mainTest.iterrows():
+#    x = row['hotInTemp_x']
+#    y = row['hotInTemp_y']
+#    if x < 46:
+ #       z = 8.25122766 + 0.8218035674*y
+#    else:
+ #       z = x
+ #   mainTest.at[i, 'hotInTemp_x'] = z
 
 
 

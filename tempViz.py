@@ -34,7 +34,7 @@ var = input("Input variable (case sensitive): ")
 #       bldgID - Do not remove " " or ' ' - required influxDB syntax
 # First Query
 beginDate = "'2019-03-23T12:00:00Z'"
-endDate = "'2019-03-28T08:00:00Z'"
+endDate = "'2019-03-29T08:00:00Z'"
 #endDate = str(datetime.now().strftime("'%Y-%m-%dT%H:%M:%SZ'"))
 bldgID = input("Input building ID: ").upper()
 bldgIDQuery = "'" + bldgID + "'"
@@ -44,11 +44,6 @@ bldgIDlabel1 = bldgID
 bldgID2 = input("Input building ID: ").upper()
 bldgIDQuery2 = "'" + bldgID2 + "'"
 bldgIDlabel2 = bldgID2
-
-
-
-
-
 
 testDateBegin ="'2019-01-29T00:00:00Z'"
 testDateEnd = "'2019-02-05T23:59:59Z'"
