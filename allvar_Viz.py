@@ -33,8 +33,8 @@ var = input("Input variable (case sensitive): ")
 #       Dates - Do not remove 'T' or 'Z' - required influxDB syntax.
 #       bldgID - Do not remove " " or ' ' - required influxDB syntax
 # First Query
-beginDate = "'2019-03-23T12:00:00Z'"
-endDate = "'2019-03-29T08:00:00Z'"
+beginDate = "'2019-03-22T12:00:00Z'"
+endDate = "'2019-04-19T12:00:00Z'"
 #endDate = str(datetime.now().strftime("'%Y-%m-%dT%H:%M:%SZ'"))
 bldgID = input("Input building ID: ").upper()
 bldgIDQuery = "'" + bldgID + "'"
@@ -107,7 +107,7 @@ fig.autofmt_xdate()
 axHotTemp = plt.subplot()
 plt.xticks(fontsize=8, rotation=35)
 axHotTemp.plot(main[var], color='red', label='BLDG '+bldgIDlabel1)
-axHotTemp.plot(main2[var], color='blue', label='BLDG '+bldgIDlabel2)
+#axHotTemp.plot(main2[var], color='blue', label='BLDG '+bldgIDlabel2)
 axHotTemp.set_title(bldgIDlabel1+' vs. '+bldgIDlabel2+" "+var, fontsize=10, weight ='bold')
 axHotTemp.legend(loc='lower right')
 axHotTemp.set_ylabel('Temp (C)')
