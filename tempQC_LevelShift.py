@@ -38,7 +38,7 @@ main.set_index('time', inplace=True)
 
 
 
-csvpath = '/Users/joseph/Desktop/GRA/DATA/QC/Temp/LLC '+bldgIDInput1+'.csv'
+csvpath = '/Users/joseph/Desktop/GRA/DATA/QC/Temp/tempLevelShift_allBLDGS/LLC '+bldgIDInput1+'.csv'
 
 mainCsv=pd.read_csv(csvpath, header=0)
 mainC = mainCsv[['time','LLC-Bldg'+bldgIDInput1+'-DHW-SWT','LLC-Bldg'+bldgIDInput1+'-DHW-RWT','LLC-Bldg'+bldgIDInput1+'-CHW-SWT']].copy()
@@ -49,15 +49,25 @@ mainC = mainC.convert_objects(convert_numeric=True)
 
 mainC = mainC.truncate(before=pd.Timestamp('2019-06-26T03:45:00'))
 
+for i, row in mainC.iterrows():
+    a = row['LLC-Bldg'+bldgIDInput1+'-DHW-SWT']
+    b = row['LLC-Bldg'+bldgIDInput1+'-DHW-RWT']
+    c = row['LLC-Bldg'+bldgIDInput1+'-CHW-SWT']
+    x = (a - 32) * 5/9
+    y = (b - 32) * 5/9
+    z = (c - 32)* 5/9
+    mainC.at[i, 'LLC-Bldg'+bldgIDInput1+'-DHW-SWT'] = x
+    mainC.at[i, 'LLC-Bldg'+bldgIDInput1+'-DHW-RWT'] = y
+    mainC.at[i, 'LLC-Bldg'+bldgIDInput1+'-CHW-SWT'] = z
+
 
 for i, row in main.iterrows():
     a = row['hotInTemp']
     b = row['hotOutTemp']
     c = row['coldInTemp']
-    x = (a * 9/5)+32+hotInCal
-    y = (b * 9/5)+32+hotOutCal
-
-    z = (c * 9 / 5) + 32- coldInCal
+    x = a +hotInCal
+    y = b +hotOutCal
+    z = c - coldInCal
     main.at[i, 'hotInTemp'] = x
     main.at[i,'hotOutTemp'] = y
     main.at[i,'coldInTemp'] = z

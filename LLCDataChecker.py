@@ -11,11 +11,11 @@ print('Receiving inputs...\n')
 #       Dates - Do not remove 'T' or 'Z' - required influxDB syntax.
 #       bldgID - Do not remove " " or ' ' - required influxDB syntax
 PORStart = "'2019-03-22T12:00:00Z'"
-POREnd = "'2019-04-25T12:00:00Z'"
-#beginDate = PORStart
-#endDate = POREnd
-beginDate = "'2019-06-26T03:45:00Z'"
-endDate = "'2019-06-27T11:30:00Z'"
+POREnd = "'2019-04-19T12:00:00Z'"
+beginDate = PORStart
+endDate = POREnd
+#beginDate = "'2019-06-26T03:45:00Z'"
+#endDate = "'2019-06-27T11:30:00Z'"
 #endDate = str(datetime.now().strftime("'%Y-%m-%dT%H:%M:%SZ'"))
 bldgID2 = input("Input building ID: ").upper()
 bldgID = "'" + bldgID2 + "'"
