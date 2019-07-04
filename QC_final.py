@@ -48,10 +48,12 @@ main = pd.DataFrame(main_ls)
 main['time'] = pd.to_datetime(main['time'])
 main.set_index('time', inplace=True)
 
+print('Data retrieved! \n')
+
 
 # tempQC_correlation: BLDG B
 if bldgIDInput1 == 'B':
-
+    print ('Fetching data to adjust BLDG B temp data...')
     bldgIDQ2 = "'D'"
     endDate2 = "'2019-03-27T16:00:00Z'"
     # query 2nd correlation dataset and convert to dataframe
@@ -62,30 +64,44 @@ if bldgIDInput1 == 'B':
     main2 = pd.DataFrame(main_ls)
     main2['time'] = pd.to_datetime(main2['time'])
     main2.set_index('time', inplace=True)
+    print('Adjustment data retrieved.\n')
+    main2.rename(columns={'hotInTemp': 'hotInTemp_D'}, inplace=True)
 
-# merge dataframes
     mainHot = main['hotInTemp'].truncate(after=pd.Timestamp('2019-03-27T16:00:00Z')).copy()
+    mainHot = mainHot.to_frame()
     mainHotQC = pd.merge(mainHot, main2, on='time')
-#   while loop coupled with for loop using date?
+    #   while loop coupled with for loop using date?
+    print('Calculating new values...')
     for i, row in mainHotQC.iterrows():
-        x = row['hotInTemp_x']
-        y = row['hotInTemp_y']
+        x = row['hotInTemp']
+        y = row['hotInTemp_D']
         z = 8.25122766 + 0.8218035674 * y
-        mainHotQC.at[i, 'hotInTemp_x'] = z
+        mainHotQC.at[i, 'hotInTemp'] = z
 
+    #   update original dataframe
+    main['hotInTemp'].update(mainHotQC['hotInTemp'])
+    print('New values for BLDG B calculated!\n')
 
-#   update original dataframe
-main['hotInTemp'] = main['hotInTemp'].update(mainHotQC['hotInTemp_x'])
+hotInTOLD = main['hotInTemp'].iloc[0]
+hotOutTOLD = main['hotOutTemp'].iloc[0]
+coldInTOLD = main['coldInTemp'].iloc[0]
+hotInFOLD = main['hotInFlowRate'].iloc[0]
+hotOutFOLD = main['hotOutFlowRate'].iloc[0]
 
-
+testmean = main['hotInTemp'].mean()
+teststd = main['hotInTemp'].std()
+print('QCing rest of data...')
 # giant for loop
 for i, row in main.iterrows():
-# get all values from row.  Values not needed are commented out
-    hotInTemp = row['hotInTemp']
-    hotOutTemp = row['hotOutTemp']
+    # get all values from row.  Values not needed are commented out
     coldInTemp = row['coldInTemp']
-    hotInFlow = row['hotInFlow']
-    hotOutFlow = row['hotOutFlow']
+    hotInFlow = row['hotInFlowRate']
+    hotInTemp = row['hotInTemp']
+    hotOutFlow = row['hotOutFlowRate']
+    hotOutTemp = row['hotOutTemp']
+
+
+
 #    coldInFlow = row ['coldInFlow']
 
 # tempQC_levelshift
@@ -98,23 +114,25 @@ for i, row in main.iterrows():
     main.at[i, 'coldInTemp'] = coldInTemp
 
 #   eliminate_extreme_vals
-    if hotInTemp < 0 or None:
+    if (hotInTOLD-hotInTemp) > 5:
         hotInTemp = hotInTOLD
+        main.at[i, 'hotInTemp']= hotInTemp
 
 #   eliminate_0s_hotFlow
-    if hotInFlow < hotOutFlow:
-        hotInFlow = hotOutFlow
-        main.at[i, 'hotInFlowRate'] = hotInFlow
+  #  if hotInFlow < hotOutFlow:
+  #      hotInFlow = hotOutFlow
+  #      main.at[i, 'hotInFlowRate'] = hotInFlow
 # store current loop values for next iteration
     hotInTOLD = hotInTemp
-    hotOutTOLD = hotOutTemp
-    coldInTOLD = coldInTemp
-    hotInFOLD = hotInFlow
-    hotOutFOLD = hotOutFlow
+ #   hotOutTOLD = hotOutTemp
+ #   coldInTOLD = coldInTemp
+ #   hotInFOLD = hotInFlow
+ #   hotOutFOLD = hotOutFlow
  #   coldInFOLD = coldInFlow
 
 # end of giant for loop
 
+print('QC Completed!\n')
 
 
 
@@ -122,9 +140,9 @@ print('Plotting final flowrates...')
 # print final data
 #Initialize figures and subplots
 gridsize=(3,1)
-fig=plt.figure(figsize=(12,8))
+fig=plt.figure(1,figsize=(12,8))
 fig.autofmt_xdate()
-fig.suptitle('Water Use Data Check for Building: '+bldgID+' Most Recent data:', fontsize=14, weight='bold')
+fig.suptitle('Final Flowrate for BLDG '+bldgIDInput1, fontsize=14, weight='bold')
 
  # 1st row - hot in
 axHotFlow = plt.subplot2grid(gridsize, (0,0))
@@ -153,9 +171,13 @@ axHotReturnFlow.set_ylabel('GPM')
 axHotReturnFlow.set_xlim(beginDate, endDate)
 axHotReturnFlow.grid(True)
 
+fig.show()
+plt.tight_layout(pad=5, w_pad=2, h_pad=2.5)
+
 
 print('Plotting final temperatures...')
-fig2=plt.figure(figsize=(12,8))
+fig2=plt.figure(2,figsize=(12,8))
+fig2.suptitle('Final Temps for BLDG '+bldgIDInput1, fontsize=14, weight='bold')
 
 axHotTemp = plt.subplot2grid(gridsize, (0,0))
 plt.xticks(fontsize=8, rotation=35)
@@ -183,7 +205,7 @@ axHotReturnTemp.set_xlim(beginDate, endDate)
 axHotReturnTemp.grid(True)
 
 plt.tight_layout(pad=5, w_pad=2, h_pad=2.5)
-plt.show()
+fig2.show()
 
 x = input('Do you want to write to database? (y/n):  ')
 

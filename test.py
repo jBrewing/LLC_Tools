@@ -60,7 +60,7 @@ if bldgIDInput1 == 'B':
     main2.rename(columns ={'hotInTemp':'hotInTemp_D'}, inplace = True)
 
     mainHot = main['hotInTemp'].truncate(after=pd.Timestamp('2019-03-27T16:00:00Z')).copy()
-    mainHot.Series.to_frame()
+    mainHot=mainHot.to_frame()
     mainHotQC = pd.merge(mainHot, main2, on='time')
     #   while loop coupled with for loop using date?
     print('calculating new values')
@@ -72,36 +72,6 @@ if bldgIDInput1 == 'B':
 
 #   update original dataframe
     main['hotInTemp'].update(mainHotQC['hotInTemp'])
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    print('Calculating new values')
-  #  for i, row in main.iterrows():
-#        x = row['hotInTemp_x']
- #       y = row['hotInTemp_y']
- #       if np.isnan(y) == True:
- #           z = 8.25122766 + 0.8218035674 * y
- #           main.at[i, 'hotInTemp_x'] = z
-
-    # merge dataframes
-    #mainHot = main['hotInTemp'].truncate(after=pd.Timestamp('2019-03-27T16:00:00Z')).copy()
-    #mainHot = pd.Series.to_frame(mainHot)
-    #mainHotQC = pd.merge(mainHot, main2, on='time')
-
-
 
 
 
