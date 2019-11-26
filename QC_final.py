@@ -2,8 +2,9 @@ import pandas as pd
 from influxdb import InfluxDBClient
 from influxdb import DataFrameClient
 import matplotlib.pyplot as plt
-from progressbar import ProgressBar
-pbar = ProgressBar()
+from calibrationFactor import caliFact
+from tabulate import tabulate
+
 
 # accept inputs
 print('Receiving inputs...\n')
@@ -11,15 +12,8 @@ print('Receiving inputs...\n')
 bldgIDInput1 = input("Input building ID: ").upper()
 bldgIDQ1 = "'" + bldgIDInput1 + "'"
 #    dates
-beginDate = "'2019-03-22T12:00:00Z'"
-endDate = "'2019-03-29T12:00:00Z'"
-#    temp calibration factors
-hotInCal = input("Input hotIn level shift val: ")
-hotOutCal = input("Input hotOut level shift val: ")
-coldInCal = input("Input coldIn level shift val: ")
-hotInCal = float(hotInCal)
-hotOutCal = float(hotOutCal)
-coldInCal = float(coldInCal)
+beginDate = "'2019-03-22T15:00:00Z'"
+endDate = "'2019-03-29T15:00:00Z'"
 
 
 # Retrieve data
@@ -29,6 +23,7 @@ print('\nConnecting to database...')
 # Set database.
 client = InfluxDBClient(host='odm2equipment.uwrl.usu.edu', port=8086, username='root',password='foobar123')
 client.switch_database('ciws')
+
 
 #   write query
 print('Assembling data query...')
@@ -53,6 +48,7 @@ print('Data retrieved! \n')
 
 # tempQC_correlation: BLDG B
 if bldgIDInput1 == 'B':
+    # Adjust inaccurate BldgB temp data with correlation from Bldg D temp data
     print ('Fetching data to adjust BLDG B temp data...')
     bldgIDQ2 = "'D'"
     endDate2 = "'2019-03-27T16:00:00Z'"
@@ -71,7 +67,7 @@ if bldgIDInput1 == 'B':
     mainHot = mainHot.to_frame()
     mainHotQC = pd.merge(mainHot, main2, on='time')
     #   while loop coupled with for loop using date?
-    print('Calculating new values...')
+    print('Calculating new temp values...')
     for i, row in mainHotQC.iterrows():
         x = row['hotInTemp']
         y = row['hotInTemp_D']
@@ -84,16 +80,29 @@ if bldgIDInput1 == 'B':
 
 hotInTOLD = main['hotInTemp'].iloc[0]
 hotOutTOLD = main['hotOutTemp'].iloc[0]
+coldInFOLD = main['coldInFlowRate'].iloc[0]
 coldInTOLD = main['coldInTemp'].iloc[0]
 hotInFOLD = main['hotInFlowRate'].iloc[0]
 hotOutFOLD = main['hotOutFlowRate'].iloc[0]
+std = main['hotInTemp'].std()
+var = main['hotInTemp'].var()
+mean = main['hotInTemp'].mean()
 
-testmean = main['hotInTemp'].mean()
-teststd = main['hotInTemp'].std()
+calibration = caliFact(bldgIDInput1)
+
 print('QCing rest of data...')
 # giant for loop
+#   handles: Temp level shift, extreme values (3000+), and return flow
+#   define values
+coldInFlow_Sum =0
+hotInFlow_Sum = 0
+hotInTemp_Sum = 0
+coldInTemp_Sum = 0
+hotOutTemp_Sum = 0
+counter = 0
 for i, row in main.iterrows():
     # get all values from row.  Values not needed are commented out
+    coldInFlow = row['coldInFlowRate']
     coldInTemp = row['coldInTemp']
     hotInFlow = row['hotInFlowRate']
     hotInTemp = row['hotInTemp']
@@ -101,38 +110,120 @@ for i, row in main.iterrows():
     hotOutTemp = row['hotOutTemp']
 
 
-
-#    coldInFlow = row ['coldInFlow']
-
 # tempQC_levelshift
 #  add calibration
-    hotInTemp = hotInTemp + hotInCal
-    hotOutTemp = hotOutTemp + hotOutCal
-    coldInTemp = coldInTemp - coldInCal
-    main.at[i, 'hotInTemp'] = hotInTemp
-    main.at[i, 'hotOutTemp'] = hotOutTemp
-    main.at[i, 'coldInTemp'] = coldInTemp
+    hotInTemp = hotInTemp + calibration[0]
+    hotOutTemp = hotOutTemp + calibration[1]
+    if hotInTemp > hotOutTemp:
+        main.at[i, 'hotInTemp'] = hotInTemp
+        main.at[i, 'hotOutTemp'] = hotOutTemp
+    else:
+        main.at[i, 'hotInTemp'] = hotInTemp
+        main.at[i, 'hotOutTemp'] = hotInTemp
+
+
+#  Not QCing cold flow.  Using raw measurements.
+#    coldInTemp = coldInTemp - calibration[2]
+#    main.at[i, 'coldInTemp'] = coldInTemp
+
 
 #   eliminate_extreme_vals
-    if (hotInTOLD-hotInTemp) > 5:
+    if (hotInTOLD-hotInTemp) > std:
         hotInTemp = hotInTOLD
         main.at[i, 'hotInTemp']= hotInTemp
 
-#   eliminate_0s_hotFlow
-  #  if hotInFlow < hotOutFlow:
-  #      hotInFlow = hotOutFlow
-  #      main.at[i, 'hotInFlowRate'] = hotInFlow
+# reacquire hotInTemp / hotOutTemp after calibrating raw data and eliminating extreme values
+#    hotInTemp = row['hotInTemp']
+#    hotOutTemp = row['hotOutTemp']
+#   Return flow fixed
+    if hotOutFlow == 0:
+        coldInFlow_Sum = coldInFlow_Sum + coldInFlow
+        coldInTemp_Sum = coldInTemp_Sum + coldInTemp
+        hotInFlow_Sum = hotInFlow_Sum + hotInFlow
+        hotInTemp_Sum = hotInTemp_Sum + hotInTemp
+        hotOutTemp_Sum = hotOutTemp_Sum + hotOutTemp
+        counter = counter + 1
+    elif hotOutFlow != 0:
+        counter = counter + 1
+        coldInFlow_Sum = coldInFlow_Sum + coldInFlow
+        coldInTemp_Sum = (coldInTemp_Sum + coldInTemp) / counter
+        hotInFlow_Sum = hotInFlow_Sum + hotInFlow
+        hotInTemp_Sum = (hotInTemp_Sum + hotInTemp) / counter
+        hotOutTemp_Sum = (hotOutTemp_Sum + hotOutTemp) / counter
+
+
+        main.at[i,'coldInFlowRate'] = coldInFlow_Sum
+        main.at[i,'coldInTemp'] = coldInTemp_Sum
+        main.at[i, 'hotInFlowRate'] = hotInFlow_Sum
+        main.at[i, 'hotInTemp'] = hotInTemp_Sum
+        main.at[i, 'hotOutTemp'] = hotOutTemp_Sum
+
+        coldInFlow_Sum = 0
+        coldInTemp_Sum = 0
+        hotInFlow_Sum = 0
+        hotInTemp_Sum = 0
+        hotOutTemp_Sum = 0
+        counter = 0
+
 # store current loop values for next iteration
     hotInTOLD = hotInTemp
  #   hotOutTOLD = hotOutTemp
  #   coldInTOLD = coldInTemp
- #   hotInFOLD = hotInFlow
+    hotInFOLD = hotInFlow
  #   hotOutFOLD = hotOutFlow
  #   coldInFOLD = coldInFlow
-
 # end of giant for loop
 
+
+
+mainFinal = main[(main['hotOutFlowRate'] != 0)]
+mainFinal['coldInFlowRate'] = mainFinal['coldInFlowRate']/60
+mainFinal['hotInFlowRate'] = mainFinal['hotInFlowRate']/60
+mainFinal['hotOutFlowRate'] = 1
+mainFinal['hotWaterUse'] = mainFinal['hotInFlowRate'] - mainFinal['hotOutFlowRate']
+
+mainFinal['hotWaterUse_fixed'] = mainFinal['hotWaterUse']
+
+
+print('Fixing hot water use...')
+for i, row in mainFinal.iterrows():
+    if row['hotWaterUse_fixed'] <0:
+        mainFinal.at[i,'hotWaterUse_fixed'] = 0
+
+#hotInFOLD = main['hotInFlowRate'].iloc[0]
+#for i, row in mainFinal.iterrows():
+#    if row['hotInFlowRate'] <0.5:
+#        mainFinal.at[i, 'hotInFlowRate'] = hotInFold
+#    else:
+#        hotInFold = row['hotInFlowRate']
+
+
+
 print('QC Completed!\n')
+
+totalHotIn = mainFinal['hotInFlowRate'].sum()
+totalHotOut = mainFinal['hotOutFlowRate'].sum()
+totalColdIn = mainFinal['coldInFlowRate'].sum()
+totalHotUse = mainFinal['hotWaterUse'].sum()
+totalHotIn_perDay = totalHotIn /28
+totalColdIn_perDay = totalColdIn /28
+totalHotOut_perDay = totalHotOut /28
+totalHotUse_perDay = totalHotUse /28
+
+
+nonzeros = mainFinal['hotWaterUse'].astype(bool).sum(axis=0)
+totalVals = mainFinal['hotWaterUse'].count()
+percent = nonzeros/totalVals
+
+
+
+source = ["type", "HOT In (gal)", "HotOut (gal)" ,  "Hot Use (gal)", "COLD In (gal)"]
+A = [('TotalUse(gal)_fact', totalHotIn, totalHotOut,totalHotUse , totalColdIn),
+     ('TotalUse/day', totalHotIn_perDay, totalHotOut_perDay,totalHotUse_perDay,totalColdIn_perDay)]
+print(tabulate(A, headers=source))
+print(nonzeros)
+print(totalVals)
+print(percent)
 
 
 
@@ -147,7 +238,7 @@ fig.suptitle('Final Flowrate for BLDG '+bldgIDInput1, fontsize=14, weight='bold'
  # 1st row - hot in
 axHotFlow = plt.subplot2grid(gridsize, (0,0))
 plt.xticks(fontsize=8, rotation=35)
-axHotFlow.plot(main['hotInFlowRate'], color='red', label='1-Sec HOT Data')
+axHotFlow.plot(mainFinal['hotInFlowRate'], color='red', label='hotIn_final')
 axHotFlow.set_title('hot water flowrate', fontsize=10, weight ='bold')
 axHotFlow.set_ylabel('GPM')
 axHotFlow.set_xlim(beginDate, endDate)
@@ -156,20 +247,21 @@ axHotFlow.grid(True)
 # 2nd row - cold in
 axColdFlow= plt.subplot2grid(gridsize, (1,0))
 plt.xticks(fontsize=8, rotation=35)
-axColdFlow.plot(main['coldInFlowRate'], color='blue', label='1-Sec HOT Data')
+axColdFlow.plot(mainFinal['coldInFlowRate'], color='blue', label='coldWaterUse_final')
 axColdFlow.set_title('cold water flowrate', fontsize=10, weight ='bold')
 axColdFlow.set_ylabel('GPM')
 axColdFlow.set_xlim(beginDate, endDate)
 axColdFlow.grid(True)
 
 # 3rd row - hot return
-axHotReturnFlow = plt.subplot2grid(gridsize, (2,0))
+axHotWaterUse = plt.subplot2grid(gridsize, (2,0))
 plt.xticks(fontsize=8, rotation=35)
-axHotReturnFlow.plot(main['hotOutFlowRate'], color='maroon', label='1-Sec HOT Data')
-axHotReturnFlow.set_title('hot out flowrate', fontsize=10, weight ='bold')
-axHotReturnFlow.set_ylabel('GPM')
-axHotReturnFlow.set_xlim(beginDate, endDate)
-axHotReturnFlow.grid(True)
+axHotWaterUse.plot(mainFinal['hotWaterUse'], color='maroon', label='hotWaterUse_final')
+axHotWaterUse.set_title('hotWaterUse', fontsize=10, weight ='bold')
+axHotWaterUse.set_ylabel('GPM')
+axHotWaterUse.set_xlim(beginDate, endDate)
+#axHotWaterUse.set_ylim(-0.01, 0.05)
+axHotWaterUse.grid(True)
 
 fig.show()
 plt.tight_layout(pad=5, w_pad=2, h_pad=2.5)
@@ -179,9 +271,11 @@ print('Plotting final temperatures...')
 fig2=plt.figure(2,figsize=(12,8))
 fig2.suptitle('Final Temps for BLDG '+bldgIDInput1, fontsize=14, weight='bold')
 
+gridsize = (2,1)
 axHotTemp = plt.subplot2grid(gridsize, (0,0))
 plt.xticks(fontsize=8, rotation=35)
-axHotTemp.plot(main['hotInTemp'], color='red', label='1-Sec HOT Data')
+axHotTemp.plot(mainFinal['hotInTemp'], color='red', label='hotIn_final')
+axHotTemp.plot(mainFinal['hotOutTemp'], color='maroon', label='hotOut_final')
 axHotTemp.set_title('hot water temp', fontsize=10, weight ='bold')
 axHotTemp.set_ylabel('Temp (C)')
 axHotTemp.set_xlim(beginDate, endDate)
@@ -189,38 +283,35 @@ axHotTemp.grid(True)
 
 axColdTemp = plt.subplot2grid(gridsize, (1,0))
 plt.xticks(fontsize=8, rotation=35)
-axColdTemp.plot(main['coldInTemp'], color='blue', label='1-Sec HOT Data')
+axColdTemp.plot(mainFinal['coldInTemp'], color='blue', label='1-Sec HOT Data')
 axColdTemp.set_title('cold water temp', fontsize=10, weight ='bold')
 axColdTemp.set_ylabel('Temp (C)')
 axColdTemp.set_xlim(beginDate, endDate)
 axColdTemp.grid(True)
 
-
-axHotReturnTemp = plt.subplot2grid(gridsize, (2,0))
-plt.xticks(fontsize=8, rotation=35)
-axHotReturnTemp.plot(main['hotOutTemp'], color='maroon', label='1-Sec HOT Data')
-axHotReturnTemp.set_title('hot out temp', fontsize=10, weight ='bold')
-axHotReturnTemp.set_ylabel('Temp (C)')
-axHotReturnTemp.set_xlim(beginDate, endDate)
-axHotReturnTemp.grid(True)
-
 plt.tight_layout(pad=5, w_pad=2, h_pad=2.5)
 fig2.show()
+plt.show()
 
-x = input('Do you want to write to database? (y/n):  ')
+x = input('Do you want to write to database? (y/n): ').upper()
 
 if x == 'Y':
 # WritePoints
+    print('Connecting to database...')
     clientdf = DataFrameClient(host='odm2equipment.uwrl.usu.edu', port=8086, username='root',password='foobar123')
     clientdf.switch_database('ciws_final')
-    clientdf.write_points(dataframe=main, measurment='LLC',
-                            field_columns={'hotInFlowRate':main[['hotInFlowRate']],
-                                           'coldInFlowRate': main[['coldInFlowRate']],
-                                           'hotOutFlowRate': main[['hotOutFlowRate']],
-                                           'hotInTemp': main[['hotInTemp']],
-                                           'coldInTemp': main[['coldInTemp']],
-                                           'hotOutTemp': main[['hotOutTemp']]},
-                            tag_columns={'buildingID': main[['buildingID']]},
+    print('Writing points...')
+    clientdf.write_points(dataframe=mainFinal, measurement='LLC',
+                            field_columns={'hotInFlowRate':mainFinal[['hotInFlowRate']],
+                                           'coldInFlowRate': mainFinal[['coldInFlowRate']],
+                                           'hotOutFlowRate': mainFinal[['hotOutFlowRate']],
+                                           'hotInTemp': mainFinal[['hotInTemp']],
+                                           'coldInTemp': mainFinal[['coldInTemp']],
+                                           'hotOutTemp': mainFinal[['hotOutTemp']]
+                                          # 'hotWaterUse':mainFinal[['hotWaterUse']],
+                                          # 'hotWaterUse_fixed':mainFinal[['hotWaterUse_fixed']]
+                                           },
+                            tag_columns={'buildingID': mainFinal[['buildingID']]},
                             protocol='line', numeric_precision=10, batch_size=2000)
 
 else:

@@ -2,7 +2,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 filepath = "/Users/joseph/Desktop/"
-file = "multi_meter_datalog_LLC_BLDG_B_2019-1-30_18-47-46.csv"
+file = "multi_meter_datalog_LLC_BLDG_F_2019-9-26_10-51-36.csv"
 
 df_main = pd.read_csv(filepath+file, header=1, index_col=0, parse_dates=True, infer_datetime_format=True)
 
@@ -12,7 +12,7 @@ returnFlow = df_main['hotOutPulseCount']
 
 gridsize = (3,1)
 fig = plt.figure(figsize=(12,8))
-fig.suptitle('Water Temp Measurment Dist. BLDG: E')
+fig.suptitle('Water Temp Measurment Dist. BLDG: D')
 
 
 ax1 = plt.subplot2grid(gridsize, (0,0))
