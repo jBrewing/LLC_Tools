@@ -51,34 +51,46 @@ main = pd.DataFrame(main_ls)
 main['time'] = pd.to_datetime(main['time'])
 main.set_index('time', inplace=True)
 
+pi = 3.1415926
+dt = 1 #second
+fc = 0.007
+
+y = 1
+main['NEWhotInFlowRate'] = float("NaN")
+
+print('reducing noise...\n')
+a = (2 * pi * dt * fc) / (2 * pi * dt * fc + 1)
+for i, row in main.iterrows():
+    y = a * row['hotInFlowRate'] + (1-a) * y
+    main.at[i, 'NEWhotInFlowRate'] = y
 
 coldInFlow_Sum = 0
 hotInFlow_Sum = 0
-#hotInFlow_Sum_NEW = 0
+hotInFlow_Sum_NEW = 0
 counter = 0
 for y, row in main.iterrows():
     # get all values from row.  Values not needed are commented out
     coldInFlow = row['coldInFlowRate']
     hotInFlow = row['hotInFlowRate']
-#    hotInNEWFlow = row['NEWhotInFlowRate']
+    hotInNEWFlow = row['NEWhotInFlowRate']
     hotOutFlow = row['hotOutFlowRate']
     if hotOutFlow == 0:
         coldInFlow_Sum = coldInFlow_Sum + coldInFlow
         hotInFlow_Sum = hotInFlow_Sum + hotInFlow
-#        hotInFlow_Sum_NEW = hotInFlow_Sum_NEW + hotInNEWFlow
+        hotInFlow_Sum_NEW = hotInFlow_Sum_NEW + hotInNEWFlow
         counter = counter + 1
 
     elif hotOutFlow != 0:
         counter = counter + 1
         coldInFlow_Sum = coldInFlow_Sum + coldInFlow
         hotInFlow_Sum = hotInFlow_Sum + hotInFlow
-#        hotInFlow_Sum_NEW = hotInFlow_Sum_NEW + hotInNEWFlow
+        hotInFlow_Sum_NEW = hotInFlow_Sum_NEW + hotInNEWFlow
 
         main.at[y, 'coldInFlowRate'] = coldInFlow_Sum
         main.at[y, 'hotInFlowRate'] = hotInFlow_Sum
-#        main.at[y, 'NEWhotInFlowRate'] = hotInFlow_Sum_NEW
+        main.at[y, 'NEWhotInFlowRate'] = hotInFlow_Sum_NEW
 
-#        hotInFlow_Sum_NEW = 0
+        hotInFlow_Sum_NEW = 0
         coldInFlow_Sum = 0
         hotInFlow_Sum = 0
         counter = 0
@@ -89,31 +101,20 @@ for y, row in main.iterrows():
 mainFinal = main[(main['hotOutFlowRate'] != 0)]
 mainFinal['hotOutFlowRate'] = 1
 
-pi = 3.1415926
-dt = 1 #second
-fc = 0.007
-
-y = 1
-mainFinal['NEWhotInFlowRate'] = float("NaN")
-
-print('reducing noise...\n')
-a = (2 * pi * dt * fc) / (2 * pi * dt * fc + 1)
-for i, row in mainFinal.iterrows():
-    y = a * row['hotInFlowRate'] + (1-a) * y
-    mainFinal.at[i, 'NEWhotInFlowRate'] = y
-
-mainFinal['hotInFlowRate'] = mainFinal['hotInFlowRate']/60
-mainFinal['NEWhotInFlowRate'] = mainFinal['NEWhotInFlowRate']/60
-
-mainFinal['NEWhotInFlowRate'] = mainFinal['NEWhotInFlowRate']+0.02
-mainFinal.loc[mainFinal['NEWhotInFlowRate'] < 1.005] =1
 
 
-mainFinal['hotWaterUse'] = mainFinal['hotInFlowRate'] - mainFinal['hotOutFlowRate']
-mainFinal['hotWaterUse_NEW'] = mainFinal['NEWhotInFlowRate'] - mainFinal['hotOutFlowRate']
+main['hotInFlowRate'] = main['hotInFlowRate']/60
+main['NEWhotInFlowRate'] = main['NEWhotInFlowRate']/60
 
-hotUse_Sum = mainFinal['hotInFlowRate'].sum()
-hotUse_Sum_NEW = mainFinal['NEWhotInFlowRate'].sum()
+#main['NEWhotInFlowRate'] = main['NEWhotInFlowRate']+0.02
+#main.loc[main['NEWhotInFlowRate'] < 1.005] =1
+
+
+main['hotWaterUse'] = main['hotInFlowRate'] - main['hotOutFlowRate']
+main['hotWaterUse_NEW'] = main['NEWhotInFlowRate'] - main['hotOutFlowRate']
+
+hotUse_Sum = main['hotInFlowRate'].sum()
+hotUse_Sum_NEW = main['NEWhotInFlowRate'].sum()
 diff = (hotUse_Sum_NEW-hotUse_Sum)/hotUse_Sum *100
 
 print(hotUse_Sum)
@@ -129,7 +130,7 @@ fig.suptitle("bldg: "+bldgID, fontsize=14, weight='bold')
  # 1st row - hot in
 axHotFlow = plt.subplot2grid(gridsize, (0,0))
 plt.xticks(fontsize=8, rotation=35)
-axHotFlow.plot(mainFinal['hotInFlowRate'], color='red', label='hotIn')
+axHotFlow.plot(main['hotInFlowRate'], color='red', label='hotIn')
 axHotFlow.set_title('hot water flowrate', fontsize=10, weight ='bold')
 axHotFlow.set_ylabel('GPM')
 axHotFlow.set_xlim(beginDate, endDate)
@@ -139,7 +140,7 @@ axHotFlow.grid(True)
 # 2nd row - cold in
 axColdFlow= plt.subplot2grid(gridsize, (1,0))
 plt.xticks(fontsize=8, rotation=35)
-axColdFlow.plot(mainFinal['NEWhotInFlowRate'], color='maroon', label='New_hotIN')
+axColdFlow.plot(main['NEWhotInFlowRate'], color='maroon', label='New_hotIN')
 axColdFlow.set_title('NEW hot water flowrate', fontsize=10, weight ='bold')
 axColdFlow.set_ylabel('GPM')
 axColdFlow.set_xlim(beginDate, endDate)

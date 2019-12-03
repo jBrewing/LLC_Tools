@@ -14,9 +14,9 @@ print('Receiving inputs...\n')
 #POREnd = "'2019-04-19T15:00:00Z'"
 #beginDate = PORStart
 #endDate = POREnd
-beginDate = "'2019-03-23T00:00:00Z'"
+beginDate = "'2019-12-01T00:00:00Z'"
 endDate = "'2019-03-24T00:00:00Z'"
-#endDate = str(datetime.now().strftime("'%Y-%m-%dT%H:%M:%SZ'"))
+endDate = str(datetime.now().strftime("'%Y-%m-%dT%H:%M:%SZ'"))
 bldgID2 = input("Input building ID: ").upper()
 bldgID = "'" + bldgID2 + "'"
 
