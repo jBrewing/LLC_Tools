@@ -52,7 +52,9 @@ for x in bldgs:
     main = pd.DataFrame(main_ls)
     main['time'] = pd.to_datetime(main['time'])
     main.set_index('time', inplace=True)
+    print('Data retrieved!')
 
+    print('QCing data...')
     coldInFlow_Sum = 0
     hotInFlow_Sum = 0
     #hotInTemp_Sum = 0
@@ -94,8 +96,8 @@ for x in bldgs:
             #hotInTemp_Sum = 0
             #hotOutTemp_Sum = 0
             counter = 0
+    print('Data QCed!')
 
-    print('Data retrieved...')
     # convert flowrates to gps, each second obs = amount of flow for that second
     main['coldInFlowRate'] = main['coldInFlowRate'] / 60
     main['hotInFlowRate'] = main['hotInFlowRate'] / 60
@@ -144,6 +146,16 @@ for x in bldgs:
     week2 = week2.resample(rule='1H', base=0).sum()
     week2 = week2.groupby(week2.index.hour).mean()
 
+# follow up
+    week3 = mainFinal.loc['2019-12-02T00:00:00Z': '2019']
+    # savings
+    wk3_TWU = week3['totalWaterUse'].sum()
+    wk3_hot = week3['hotWaterUse'].sum()
+    wk3_cold = week3['coldInFlowRate'].sum()
+    # generate graph of hourly use throughout day for last
+    week3 = week3.resample(rule='1H', base=0).sum()
+    week3 = week3.groupby(week3.index.hour).mean()
+
 
     bldgNum = bldgNUM(x)
     days = 7
@@ -170,6 +182,14 @@ for x in bldgs:
     results.at[x, 'wk2_TWU_cold'] = wk2_cold
     results.at[x, 'wk2_TWU_perCap'] = wk2_TWU / bldgNum
     results.at[x, 'wk2_TWU_perCap_perDay'] = wk2_TWU/bldgNum/days
+    days = 7
+    results.at[x, 'wk3_TWU'] = wk3_TWU
+    results.at[x, 'wk3_TWU_perDay'] = wk3_TWU / days
+    results.at[x, 'wk3_TWU_hot'] = wk3_hot
+    results.at[x, 'wk3_TWU_cold'] = wk3_cold
+    results.at[x, 'wk3_TWU_perCap'] = wk3_TWU / bldgNum
+    results.at[x, 'wk3_TWU_perCap_perDay'] = wk3_TWU / bldgNum / days
+
 
 
     print('Plotting results...\n')
@@ -182,12 +202,14 @@ for x in bldgs:
     baseline['time'] = hours
     week1['time'] = hours
     week2['time'] =hours
+    week3['time']=hours
 
     plt.figure(figsize=(12,6))
     plt.plot('time', 'totalWaterUse', data=baseline, color='grey', alpha=0.35, label='Baseline')
     plt.plot('time', 'totalWaterUse', data=week1, color='skyblue', linewidth=2, linestyle='--', alpha=0.75,
              label='Nov 4 - Nov 10')
-    plt.plot('time', 'totalWaterUse', data=week2, color='navy', linewidth=4, label='Nov 11 - Nov 17')
+    plt.plot('time', 'totalWaterUse', data=week2, color='navy', linewidth=2, alpha=0.75, label='Nov 11 - Nov 17')
+    plt.plot('time', 'totalWaterUse', data=week2, color='navy', linewidth=4, label='DEC 03 - DEC 10')
     plt.title('Average Hourly Water Use: BLDG '+x, fontsize=18)
     plt.xlabel('Time', fontsize=14)
     plt.ylabel('Water Use (gal)', fontsize=14)
@@ -199,7 +221,7 @@ for x in bldgs:
     plt.savefig(filepath+'waterUse_'+x+'.png')
 
 
- #   plt.show()
+#    plt.show()
 
 print('Saving results to csv file...')
 results.reset_index(inplace=True)

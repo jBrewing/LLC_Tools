@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 
 
 
-filepath='/Users/joseph/Desktop/GRA/ResearchComponents/DATA/QC/Flow/NoiseReduction/AggData/'
+filepath='/Users/joseph/Desktop/GRA/ResearchComponents/DATA/QC/Flow/NoiseReduction/AggData/1day_midnight-midnight/'
 
 
 
@@ -18,7 +18,7 @@ print('Receiving inputs...\n')
 #beginDate = PORStart
 #endDate = POREnd
 beginDate = "'2019-03-23T00:00:00Z'"
-endDate = "'2019-03-30T00:00:00Z'"
+endDate = "'2019-03-24T00:00:00Z'"
 #endDate = str(datetime.now().strftime("'%Y-%m-%dT%H:%M:%SZ'"))
 bldgID = input("Input building ID: ").upper()
 bldgID = "'" + bldgID + "'"
@@ -91,23 +91,24 @@ mainFinal['hotOutFlowRate'] = 1
 
 # convert flowrates to gps, each second obs = amount of flow for that second
 mainFinal['hotInFlowRate'] = mainFinal['hotInFlowRate'] / 60
-
+mainFinal['coldInFlowRate'] = mainFinal['coldInFlowRate'] / 60
 
 pi = 3.1415926
 dt = 1 #second
 fc = [0.05, 0.04, 0.03, 0.02, 0.01, 0.009, 0.008, 0.007, 0.006, 0.005]
 
-results = pd.DataFrame(columns=['a', 'hotSum', 'NEWhotSum', 'diff'], index = fc)
+results = pd.DataFrame(columns=['a', 'hotSum', 'NEWhotSum', 'diffHot', 'coldSum', 'NEWcoldSum', 'diffCold'], index = fc)
 
 y = 1
-main['NEWhotInFlowRate'] = float("NaN")
+z=1
 for x in fc:
     print('reducing noise...\n')
     a = (2 * pi * dt * x) / (2 * pi * dt * x + 1)
     for i, row in mainFinal.iterrows():
         y = a * row['hotInFlowRate'] + (1-a) * y
+        z = a * row['coldInFlowRate'] + (1 - a) * z
         mainFinal.at[i, 'NEWhotInFlowRate'] = y
-
+        mainFinal.at[i, 'NEWcoldInFlowRate'] = z
 
 
     mainFinal['hotWaterUse'] = mainFinal['hotInFlowRate'] - mainFinal['hotOutFlowRate']
@@ -115,16 +116,23 @@ for x in fc:
 
     # Calculate sum of hotIn flowrate without adjustment for control value
     hotSum = mainFinal['hotInFlowRate'].sum()
+    coldSum = mainFinal['coldInFlowRate'].sum()
 
     #iteratvely calculate NEW hotIn flowrate to compare impact of adjustment with control
     NEWhotSum = mainFinal['NEWhotInFlowRate'].sum()
-    diff = (hotSum-NEWhotSum)/hotSum * 100
+    NEWcoldSum = mainFinal['NEWcoldInFlowRate'].sum()
+
+    diffHot = str((hotSum-NEWhotSum)/hotSum * 100)
+    diffCold = str((coldSum - NEWcoldSum) / coldSum * 100)
 
     #update results
     results.at[x, 'a'] = a
     results.at[x, 'hotSum'] = hotSum
     results.at[x, 'NEWhotSum'] = NEWhotSum
-    results.at[x, 'diff'] = diff
+    results.at[x, 'diffHot'] = diffHot + ' %'
+    results.at[x, 'coldSum'] = coldSum
+    results.at[x, 'NEWcoldSum'] = NEWcoldSum
+    results.at[x, 'diffCold'] = diffCold + ' %'
 
     x = str(x)
     a = str(a)
@@ -142,7 +150,7 @@ for x in fc:
     axHotFlow.set_title('hot water flowrate', fontsize=10, weight ='bold')
     axHotFlow.set_ylabel('GPM')
     axHotFlow.set_xlim(beginDate, endDate)
-#    axHotFlow.set_ylim(3,4)
+    #axHotFlow.set_ylim(0.9,1.1)
     axHotFlow.grid(True)
 
     # 2nd row - cold in
@@ -152,17 +160,47 @@ for x in fc:
     axColdFlow.set_title('NEW hot water flowrate', fontsize=10, weight ='bold')
     axColdFlow.set_ylabel('GPM')
     axColdFlow.set_xlim(beginDate, endDate)
-#    axColdFlow.set_ylim(3, 4)
+    #axColdFlow.set_ylim(0, 1.1)
     axColdFlow.grid(True)
 
     plt.tight_layout(pad=5, w_pad=2, h_pad=2.5)
     print('saving fig...')
-    plt.savefig(filepath+'flowQC_noiseReduction_fc=' + x + '.png')
+    plt.savefig(filepath+'HOTflowQC_noiseReduction_fc=' + x + '.png')
+
+    fig = plt.figure(2, figsize=(12, 8))
+    fig.autofmt_xdate()
+    fig.suptitle('a = ' + a + ', x = ' + x, fontsize=14, weight='bold')
+
+    # 1st row - hot in
+    axHotFlow = plt.subplot2grid(gridsize, (0, 0))
+    plt.xticks(fontsize=8, rotation=35)
+    axHotFlow.plot(mainFinal['coldInFlowRate'], color='blue', label='hotIn')
+    axHotFlow.set_title('RAW cold-water flowrate', fontsize=10, weight='bold')
+    axHotFlow.set_ylabel('Gal')
+    axHotFlow.set_xlim(beginDate, endDate)
+    axHotFlow.set_ylim(0,5)
+    axHotFlow.grid(True)
+
+    # 2nd row - cold in
+    axColdFlow = plt.subplot2grid(gridsize, (1, 0))
+    plt.xticks(fontsize=8, rotation=35)
+    axColdFlow.plot(mainFinal['NEWcoldInFlowRate'], color='navy', label='New_hotIN')
+    axColdFlow.set_title('NEW cold-water flowrate', fontsize=10, weight='bold')
+    axColdFlow.set_ylabel('Gal')
+    axColdFlow.set_xlim(beginDate, endDate)
+    axColdFlow.set_ylim(0, 5)
+    axColdFlow.grid(True)
+
+    plt.tight_layout(pad=5, w_pad=2, h_pad=2.5)
+    print('saving fig...')
+    plt.savefig(filepath + 'COLDflowQC_noiseReduction_fc=' + x + '.png')
 
     plt.show()
 
+
+print(results)
 results.reset_index(inplace=True)
-results.to_csv(filepath+'flowQC_noiseReduction_Agg.csv', encoding='utf-8', index=False)
+results.to_csv(filepath+'24hr_flowQC_noiseReduction_Agg.csv', encoding='utf-8', index=False)
 
 print(results)
 
