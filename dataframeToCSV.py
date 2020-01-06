@@ -9,7 +9,7 @@ print('Receiving inputs...\n')
 #       Dates - Do not remove 'T' or 'Z' - required influxDB syntax.
 #       bldgID - Do not remove " " or ' ' - required influxDB syntax
 beginDate = "'2019-03-23T00:00:00Z'"
-endDate = "'2019-04-06T00:00:00Z'"
+endDate = "'2019-03-24T00:00:00Z'"
 #endDate = str(datetime.now().strftime("'%Y-%m-%dT%H:%M:%SZ'"))
 bldgIDInput1 = input("Input building ID: ").upper()
 #bldgIDInput2 = input("Input building ID: ").upper()
@@ -30,7 +30,7 @@ print('Assembling data query...')
 # bracketed with ' '.
 # Query returns a 'ResultSet" type.  Have to convert to pandas dataframe.
 #query = """SELECT "hotInFlowRate","coldInFlowRate", "hotOutFlowRate"  FROM "flow" WHERE "buildingID" ="""+bldgIDQ1+""" AND time >= """+beginDate+""" AND time <= """+endDate+""""""
-query = """SELECT "coldInFlowRate"  FROM "flow" WHERE "buildingID" ="""+bldgIDQ1+""" AND time >= """+beginDate+""" AND time <= """+endDate+""""""
+query = """SELECT *  FROM "flow" WHERE "buildingID" ="""+bldgIDQ1+""" AND time >= """+beginDate+""" AND time <= """+endDate+""""""
 
 
 print('Retrieving data...')
@@ -46,7 +46,7 @@ main.set_index('time', inplace=True)
 
 
 print('Export dataframes as CSV')
-filename = '/Users/joseph/Desktop/coldInFlowRate_BLDG_'+bldgIDInput1+'.csv'
+filename = '/Users/joseph/Desktop/GRA/ResearchComponents/DATA/QC/Flow/NoiseReduction/toJosh/BLDG_C_03-23_02-24_RAWflow.csv'
 #filename = '/Users/joseph/Desktop/QC_BLDG'+bldgIDInput1+'+BLDG'+bldgIDInput2+'.csv'
 main.to_csv(filename, header=True)
 
