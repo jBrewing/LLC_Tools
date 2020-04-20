@@ -1,3 +1,4 @@
+# import libraries
 import pandas as pd
 from influxdb import InfluxDBClient
 import matplotlib.pyplot as plt
@@ -11,8 +12,8 @@ print('Receiving inputs...\n')
 beginDate = "'2019-03-23T12:00:00Z'"
 endDate = "'2019-03-29T08:00:00Z'"
 #endDate = str(datetime.now().strftime("'%Y-%m-%dT%H:%M:%SZ'"))
-bldgIDInput1 = input("Input building ID: ").upper()
-bldgIDInput2 = input("Input building ID: ").upper()
+bldgIDInput1 = 'B'
+bldgIDInput2 = 'D'
 bldgIDQ1 = "'" + bldgIDInput1 + "'"
 bldgIDQ2 = "'" + bldgIDInput2 + "'"
 
@@ -62,11 +63,12 @@ mainTestOrig = mainTest2
 print('calculating new values')
 # loop through rows with iterrows(), checking BHotInTemp against some value
 #   if BHotInTemp doesnt pass test, change with regression equation and insert into row.
-for i, row in mainTest.iterrows():
-    x = row['hotInTemp_x']
-    y = row['hotInTemp_y']
-    z = 8.25122766 + 0.8218035674*y
-    mainTest.at[i, 'hotInTemp_x'] = z
+mainTest['hotInTemp_z'] = 8.25122766 + 0.8218035674 * mainTest['hotInTemp_y']
+#for i, row in mainTest.iterrows():
+#    x = row['hotInTemp_x']
+#    y = row['hotInTemp_y']
+#    z = 8.25122766 + 0.8218035674*y
+#    mainTest.at[i, 'hotInTemp_x'] = z
 
 #for i, row in mainTest.iterrows():
 #    x = row['hotInTemp_x']
@@ -87,7 +89,7 @@ axHotTemp = plt.subplot()
 plt.xticks(fontsize=8, rotation=35)
 #axHotTemp.scatter(mainTest['hotInTemp_x'], mainTest['hotInTemp_y'], color='red')
 #axHotTemp.plot(mainTest['hotInTemp_x'], mainTest['hotInTemp_y'], color='blue')
-axHotTemp.plot(mainTest['hotInTemp_x'], color='red')
+axHotTemp.plot(mainTest['hotInTemp_z'], color='red')
 axHotTemp.plot(mainTest['hotInTemp_y'], color='blue')
 #axHotTemp.set_xlim(min(mainTest['hotInTemp_x'])-2, max(mainTest['hotInTemp_x'])+2)
 axHotTemp.set_xlim(beginDate, endDate)

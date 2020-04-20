@@ -1,10 +1,5 @@
 import pandas as pd
 from influxdb import InfluxDBClient
-from influxdb import DataFrameClient
-import matplotlib.pyplot as plt
-from calibrationFactor import caliFact
-from tabulate import tabulate
-
 
 # accept inputs
 print('Receiving inputs...\n')

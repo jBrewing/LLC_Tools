@@ -2,7 +2,62 @@ import pandas as pd
 from influxdb import InfluxDBClient
 from influxdb import DataFrameClient
 import matplotlib.pyplot as plt
-from tempQC.calibrationFunctions import caliFact, calibration_flow
+from tempQC.calibrationFunctions import calibration_temp, calibration_flow, data_chunk
+import numpy as np
+
+
+
+
+def adaptiveMedianFilter(signal, minWindowSize, maxWindowSize, threshold):
+    filteredSignal = []
+    window = []
+    windowSize = minWindowSize
+    headLength = 0
+    for j in range(0, windowSize):
+        window.append(signal[j])
+    for i in range(0, len(signal)):
+        delta = signal[i] - signal[i - 1]
+        if np.absolute(delta) > threshold:
+            windowSize = minWindowSize
+            window.clear()
+            if windowSize % 2 == 0:
+                headLength = windowSize // 2
+            else:
+                headLength = (windowSize - 1) // 2
+            if (i >= headLength) and (i < (len(signal) - headLength)):
+                for j in range(0, windowSize):
+                    window.append(signal[i - (headLength - j)])
+            elif (i < headLength):
+                for j in range(0, windowSize):
+                    window.append(signal[i + j])
+            else:
+                for j in range(0, windowSize):
+                    window.append(signal[len(signal) - j])
+        else:
+            if (windowSize + 2) <= maxWindowSize:
+                windowSize += 2
+                window.append(0)
+                window.append(0)
+
+            if windowSize % 2 == 0:
+                headLength = windowSize // 2
+            else:
+                headLength = (windowSize - 1) // 2
+            if (i >= headLength) and (i < (len(signal) - headLength)):
+                for j in range(0, windowSize):
+                    window[j] = signal[i - (headLength - j)]
+            elif (i < headLength):
+                for j in range(0, windowSize):
+                    window[j] = signal[i + j]
+            else:
+                for j in range(0, windowSize):
+                    window[j] = signal[len(signal) - j - 1]
+        median = np.median(window)
+        filteredSignal.append(median)
+        percent = i / len(signal) * 100
+        print(" %2.2f %%, window size = %3d" % (percent, windowSize), end="\r", flush=True)
+    print("100.00 %%, window size = %3d" % windowSize)
+    return filteredSignal
 
 # accept inputs
 print('Receiving inputs...\n')
@@ -10,9 +65,11 @@ print('Receiving inputs...\n')
 bldg = input("Input building ID: ").upper()
 bldgIDQ1 = "'" + bldg + "'"
 #    dates
-beginDate = "'2019-03-22T15:00:00Z'"
-endDate = "'2019-03-29T15:00:00Z'"
+week = int(input("Input week #: "))
+beginDate = "'2019-04-03T00:00:00Z'"
+endDate = "'2019-04-03T12:00:00Z'"
 
+dates = data_chunk(week)
 
 # Retrieve data
 #   connect to database
@@ -30,7 +87,7 @@ print('Assembling data query...')
 # Query returns a 'ResultSet" type.  Have to convert to pandas dataframe.
 query = """SELECT "coldInFlowRate","coldInTemp", "hotInFlowRate", "hotInTemp", "hotOutFlowRate", "hotOutTemp"
   FROM "flow" 
-  WHERE "buildingID" ="""+bldgIDQ1+""" AND time >= """+beginDate+""" AND time <= """+endDate+""""""
+  WHERE "buildingID" ="""+bldgIDQ1+""" AND time >= """+dates[0]+""" AND time <= """+dates[1]+""""""
 #   send query
 print('Retrieving data...')
 results = client.query(query)
@@ -41,28 +98,24 @@ df = pd.DataFrame(list(results.get_points(measurement='flow')))
 df['time'] = pd.to_datetime(df['time'])
 df.set_index('time', inplace=True)
 
-print('Data retrieved!')
+print('Data retrieved!\n')
 
 
 # Begin QC ##################
 
 # Temperature QC ############
-print('Level shifting temp values...')
-columns = ['hotInTemp', 'hotOutTemp', 'coldInTemp']
-for (column, cal) in zip(columns, caliFact(bldg)):
-    df[column] = df[column] + cal
-print('Level shifting temp valus complete! \n')
 
-if bldg == 'B':
+if bldg == 'B' and week == 1:
 # tempQC: correlation, BLDG B
     # Adjust inaccurate BldgB temp data with correlation from Bldg D temp data
     print ('Fetching data to adjust BLDG B temp data...')
     bldgIDQ2 = "'D'"
+    beginDate2 = "'2019-03-22T12:00:00Z'"
     endDate2 = "'2019-03-27T16:00:00Z'"
     # query 2nd correlation dataset and convert to dataframe
     query = """SELECT "hotInTemp" 
     FROM "flow" 
-    WHERE "buildingID" =""" + bldgIDQ2 + """ AND time >= """ + beginDate + """ AND time <= """ + endDate2 + """"""
+    WHERE "buildingID" =""" + bldgIDQ2 + """ AND time >= """ + beginDate2 + """ AND time <= """ + endDate2 + """"""
 
     results = client.query(query)
     df_2 =pd.DataFrame(list(results.get_points(measurement='flow')))
@@ -72,56 +125,59 @@ if bldg == 'B':
     df_2.rename(columns={'hotInTemp': 'hotInTemp_D'}, inplace=True)
 
     mainHot = df['hotInTemp'].truncate(after=pd.Timestamp('2019-03-27T16:00:00Z')).copy()
-    mainHot = mainHot.to_frame()
     mainHotQC = pd.merge(mainHot, df_2, on='time')
-    #   while loop coupled with for loop using date?
+
     print('Calculating new temp values...')
     mainHotQC['hotInTemp'] = 8.25122766 + 0.8218035674 * mainHotQC['hotInTemp_D']
-
-    #   update original dataframe, df
-    df['hotInTemp'].update(mainHotQC['hotInTemp'])
+    df['hotInTemp'].update(mainHotQC['hotInTemp']) # update original dataframe, df
     print('New hotInTemp values for BLDG B calculated!\n')
 
 
 # tempQC: level shift
+df_temp = df.copy()
 # Add calibration factor to each value
 print('Level shifting temp values...')
 columns = ['hotInTemp', 'hotOutTemp','coldInTemp']
-for (column, cal) in zip(columns, caliFact(bldg)):
-    df[column] = df[column] + cal
+for (column, cal) in zip(columns, calibration_temp(bldg)):
+    df_temp[column] = df_temp[column] + cal
 print('Level shifting temp values complete!\n')
 
+# Flow QC ###################
+
+# flowQC: filter noise
+df_filter=df_temp.copy()
+print('Filtering noise from hotInFlowRate...')
+df_filter['hotInFlowRate'] = adaptiveMedianFilter(df_filter['hotInFlowRate'], 9, 301,0.5) # filter noise in hotInFlowRate
+print('hotInFlowRate complete!')
+print('Filtering noise from coldInFlowRate...')
+df_filter['coldInFlowRate'] = adaptiveMedianFilter(df_filter['coldInFlowRate'], 9, 301,0.5) # filter noise in coldInFlowRate
+print('coldInFlowRate complete! \n')
+
+df_shift = df_filter.copy()
 # flowQC: level shift
 print('Level shifting hotInFlowRate values...')
 if bldg == 'B':
-    df_2 = df.truncate(before=pd.Timestamp('2019-04-16T19:40:00Z')).copy()
+    df_2 = df_shift.truncate(before=pd.Timestamp('2019-04-16T19:40:00Z')).copy()
     df_2['hotInFlowRate'] = df_2['hotInFlowRate'] - 0.032
-
+    df_shift['hotInFlowRate'].update(df_2['hotInFlowRate'])
 elif bldg == 'E':
-    df_2 = df.truncate(before=pd.Timestamp('2019-04-04T02:22:55Z')).copy()
+    df_2 = df_shift.truncate(before=pd.Timestamp('2019-04-04T02:22:55Z')).copy()
     df_2['hotInFlowRate'] = df_2['hotInFlowRate'] - 0.031
+    df_shift['hotInFlowRate'].update(df_2['hotInFlowRate'])
 print('Level shifting flow complete! \n')
 
-
-# flowQC: zero flows
-print('Zeroing hotInFlowRate values...')
-calibration = calibration_flow(bldg)
-for i, row in df.iterrows():
-    if row['hotInFlowRate'] <= calibration[0]:
-        df.at[i, 'hotInFlowRate'] = calibration[1]
-print('Zeroing flows complete!\n')
 
 
 # flowQC: Pulse Aggregation
 print('Aggregating pulses...')
-df_new = df.copy()
+df_agg = df_shift.copy()
 coldInFlow_Sum =0 # Initalize variables to aggregate temp/flows in between pulses
 hotInFlow_Sum = 0
 hotInTemp_Sum = 0
 coldInTemp_Sum = 0
 hotOutTemp_Sum = 0
 counter = 0       # counter will count seconds between pulses
-for i, row in df.iterrows():
+for i, row in df_agg.iterrows():
     if row['hotOutFlowRate'] == 0:
         coldInFlow_Sum = coldInFlow_Sum + row['coldInFlowRate']
         coldInTemp_Sum = coldInTemp_Sum +row['coldInTemp']
@@ -137,12 +193,11 @@ for i, row in df.iterrows():
         hotInTemp_Sum = (hotInTemp_Sum + row['hotInTemp']) / counter
         hotOutTemp_Sum = (hotOutTemp_Sum + row['hotOutTemp']) / counter
 
-
-        df_new.at[i,'coldInFlowRate'] = coldInFlow_Sum
-        df_new.at[i,'coldInTemp'] = coldInTemp_Sum
-        df_new.at[i, 'hotInFlowRate'] = hotInFlow_Sum
-        df_new.at[i, 'hotInTemp'] = hotInTemp_Sum
-        df_new.at[i, 'hotOutTemp'] = hotOutTemp_Sum
+        df_agg.at[i,'coldInFlowRate'] = coldInFlow_Sum
+        df_agg.at[i,'coldInTemp'] = coldInTemp_Sum
+        df_agg.at[i, 'hotInFlowRate'] = hotInFlow_Sum
+        df_agg.at[i, 'hotInTemp'] = hotInTemp_Sum
+        df_agg.at[i, 'hotOutTemp'] = hotOutTemp_Sum
 
         coldInFlow_Sum = 0 # Zero running sums after calculating aggregated values
         coldInTemp_Sum = 0
@@ -154,156 +209,15 @@ for i, row in df.iterrows():
 print('Pulse aggregation complete!')
 
 
-#hotInTOLD = main['hotInTemp'].iloc[0]
-#hotOutTOLD = main['hotOutTemp'].iloc[0]
-#coldInFOLD = main['coldInFlowRate'].iloc[0]
-#coldInTOLD = main['coldInTemp'].iloc[0]
-#hotInFOLD = main['hotInFlowRate'].iloc[0]
-#hotOutFOLD = main['hotOutFlowRate'].iloc[0]
-#std = main['hotInTemp'].std()
-#var = main['hotInTemp'].var()
-#mean = main['hotInTemp'].mean()
-
-"""
-
-print('QCing rest of data...')
-# giant for loop
-#   handles: Temp level shift, extreme values (3000+), and return flow
-#   define values
-coldInFlow_Sum =0
-hotInFlow_Sum = 0
-hotInTemp_Sum = 0
-coldInTemp_Sum = 0
-hotOutTemp_Sum = 0
-counter = 0
-for i, row in main.iterrows():
-    # get all values from row.  Values not needed are commented out
-    coldInFlow = row['coldInFlowRate']
-    coldInTemp = row['coldInTemp']
-    hotInFlow = row['hotInFlowRate']
-    hotInTemp = row['hotInTemp']
-    hotOutFlow = row['hotOutFlowRate']
-    hotOutTemp = row['hotOutTemp']
-
-
-# tempQC_levelshift
-#  add calibration
-    hotInTemp = hotInTemp + calibration[0]
-    hotOutTemp = hotOutTemp + calibration[1]
-    if hotInTemp > hotOutTemp:
-        main.at[i, 'hotInTemp'] = hotInTemp
-        main.at[i, 'hotOutTemp'] = hotOutTemp
-    else:
-        main.at[i, 'hotInTemp'] = hotInTemp
-        main.at[i, 'hotOutTemp'] = hotInTemp
-
-
-#  Not QCing cold flow.  Using raw measurements.
-#    coldInTemp = coldInTemp - calibration[2]
-#    main.at[i, 'coldInTemp'] = coldInTemp
-
-
-#   eliminate_extreme_vals
-    if (hotInTOLD-hotInTemp) > std:
-        hotInTemp = hotInTOLD
-        main.at[i, 'hotInTemp']= hotInTemp
-
-# reacquire hotInTemp / hotOutTemp after calibrating raw data and eliminating extreme values
-#    hotInTemp = row['hotInTemp']
-#    hotOutTemp = row['hotOutTemp']
-#   Return flow fixed
-    if hotOutFlow == 0:
-        coldInFlow_Sum = coldInFlow_Sum + coldInFlow
-        coldInTemp_Sum = coldInTemp_Sum + coldInTemp
-        hotInFlow_Sum = hotInFlow_Sum + hotInFlow
-        hotInTemp_Sum = hotInTemp_Sum + hotInTemp
-        hotOutTemp_Sum = hotOutTemp_Sum + hotOutTemp
-        counter = counter + 1
-    elif hotOutFlow != 0:
-        counter = counter + 1
-        coldInFlow_Sum = coldInFlow_Sum + coldInFlow
-        coldInTemp_Sum = (coldInTemp_Sum + coldInTemp) / counter
-        hotInFlow_Sum = hotInFlow_Sum + hotInFlow
-        hotInTemp_Sum = (hotInTemp_Sum + hotInTemp) / counter
-        hotOutTemp_Sum = (hotOutTemp_Sum + hotOutTemp) / counter
-
-
-        main.at[i,'coldInFlowRate'] = coldInFlow_Sum
-        main.at[i,'coldInTemp'] = coldInTemp_Sum
-        main.at[i, 'hotInFlowRate'] = hotInFlow_Sum
-        main.at[i, 'hotInTemp'] = hotInTemp_Sum
-        main.at[i, 'hotOutTemp'] = hotOutTemp_Sum
-
-        coldInFlow_Sum = 0
-        coldInTemp_Sum = 0
-        hotInFlow_Sum = 0
-        hotInTemp_Sum = 0
-        hotOutTemp_Sum = 0
-        counter = 0
-
-# store current loop values for next iteration
-    hotInTOLD = hotInTemp
- #   hotOutTOLD = hotOutTemp
- #   coldInTOLD = coldInTemp
-    hotInFOLD = hotInFlow
- #   hotOutFOLD = hotOutFlow
- #   coldInFOLD = coldInFlow
-# end of giant for loop
-
-"""
-
-
-df_final = df_new[(df_new['hotOutFlowRate'] != 0)]
-df_final['coldInFlowRate'] = df_final['coldInFlowRate']/60
-df_final['hotInFlowRate'] = df_final['hotInFlowRate']/60
-df_final['hotOutFlowRate'] = 1
+df_final = df_agg[(df_agg['hotOutFlowRate'] != 0)]
+df_final['coldInFlowRate'] = df_final['coldInFlowRate']/60 # convert from gpm to gps
+df_final['hotInFlowRate'] = df_final['hotInFlowRate']/60 # convert from gpm to gps
+df_final['hotOutFlowRate'] = 1 # 1 pulse = 1 gal.  SO every indicates 1 gal has passed through the return system
 df_final['hotWaterUse'] = df_final['hotInFlowRate'] - df_final['hotOutFlowRate']
-
-#mainFinal['hotWaterUse_fixed'] = mainFinal['hotWaterUse']
-
-
-#print('Fixing hot water use...')
-#for i, row in mainFinal.iterrows():
-#    if row['hotWaterUse_fixed'] <0:
-#        mainFinal.at[i,'hotWaterUse_fixed'] = 0
-
-#hotInFOLD = main['hotInFlowRate'].iloc[0]
-#for i, row in mainFinal.iterrows():
-#    if row['hotInFlowRate'] <0.5:
-#        mainFinal.at[i, 'hotInFlowRate'] = hotInFold
-#    else:
-#        hotInFold = row['hotInFlowRate']
-
 
 
 print('QC Completed!\n')
 
-"""
-totalHotIn = mainFinal['hotInFlowRate'].sum()
-totalHotOut = mainFinal['hotOutFlowRate'].sum()
-totalColdIn = mainFinal['coldInFlowRate'].sum()
-totalHotUse = mainFinal['hotWaterUse'].sum()
-totalHotIn_perDay = totalHotIn /28
-totalColdIn_perDay = totalColdIn /28
-totalHotOut_perDay = totalHotOut /28
-totalHotUse_perDay = totalHotUse /28
-
-
-nonzeros = mainFinal['hotWaterUse'].astype(bool).sum(axis=0)
-totalVals = mainFinal['hotWaterUse'].count()
-percent = nonzeros/totalVals
-
-
-
-source = ["type", "HOT In (gal)", "HotOut (gal)" ,  "Hot Use (gal)", "COLD In (gal)"]
-A = [('TotalUse(gal)_fact', totalHotIn, totalHotOut,totalHotUse , totalColdIn),
-     ('TotalUse/day', totalHotIn_perDay, totalHotOut_perDay,totalHotUse_perDay,totalColdIn_perDay)]
-print(tabulate(A, headers=source))
-print(nonzeros)
-print(totalVals)
-print(percent)
-
-"""
 
 print('Plotting final flowrates...')
 # print final data
