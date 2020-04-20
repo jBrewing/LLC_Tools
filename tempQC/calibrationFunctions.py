@@ -16,7 +16,7 @@
 # Last modified: 9/17/19
 
 
-def caliFact(BldgID):
+def calibration_temp(BldgID):
 
     if "B" in BldgID:
         hotInCal = 4.47
@@ -43,7 +43,52 @@ def caliFact(BldgID):
     hotOutCal = float(hotOutCal)
     coldInCal = float(coldInCal)
 
-    calibration =[hotInCal, hotOutCal, coldInCal]
+    calibration = [hotInCal, hotOutCal, coldInCal]
 
 
     return calibration
+
+
+def calibration_flow(BldgID):
+    if "B" in BldgID:
+        hotInCal = 4.47
+        hotInZero = 4.40
+    elif "C" in BldgID:
+        hotInCal = 3.38
+        hotInZero = 3.31
+    elif "D" in BldgID:
+        hotInCal = 3.782
+        hotInZero = 3.717
+    elif "E" in BldgID:
+        hotInCal = 3.505
+        hotInZero = 3.435
+    elif "F" in BldgID:
+        hotInCal = 4.0
+        hotInZero = 3.967
+
+    hotInCal = float(hotInCal)
+    hotInZero = float(hotInZero)
+
+
+    calibration = [hotInCal, hotInZero]
+
+
+    return calibration
+
+def data_chunk(week):
+    if week == 1:
+        beginDate = "'2019-03-22T12:00:00Z'"
+        endDate = "'2019-03-28T23:59:59Z'"
+    elif week == 2:
+        beginDate = "'2019-03-29T00:00:00Z'"
+        endDate = "'2019-04-04T23:59:59Z'"
+    elif week == 3:
+        beginDate = "'2019-04-05T00:00:00Z'"
+        endDate = "'2019-04-11T23:59:59Z'"
+    elif week == 4:
+        beginDate = "'2019-04-12T00:00:00Z'"
+        endDate = "'2019-04-19T12:00:00Z'"
+
+    dates = [beginDate, endDate]
+
+    return dates
