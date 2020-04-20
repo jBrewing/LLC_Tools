@@ -66,8 +66,8 @@ bldg = input("Input building ID: ").upper()
 bldgIDQ1 = "'" + bldg + "'"
 #    dates
 week = int(input("Input week #: "))
-beginDate = "'2019-04-03T00:00:00Z'"
-endDate = "'2019-04-03T12:00:00Z'"
+beginDate = "'2019-03-28T00:00:00Z'"
+endDate = "'2019-03-28T06:00:00Z'"
 
 dates = data_chunk(week)
 
@@ -87,7 +87,7 @@ print('Assembling data query...')
 # Query returns a 'ResultSet" type.  Have to convert to pandas dataframe.
 query = """SELECT "coldInFlowRate","coldInTemp", "hotInFlowRate", "hotInTemp", "hotOutFlowRate", "hotOutTemp"
   FROM "flow" 
-  WHERE "buildingID" ="""+bldgIDQ1+""" AND time >= """+dates[0]+""" AND time <= """+dates[1]+""""""
+  WHERE "buildingID" ="""+bldgIDQ1+""" AND time >= """+beginDate+""" AND time <= """+endDate+""""""
 #   send query
 print('Retrieving data...')
 results = client.query(query)
@@ -150,7 +150,7 @@ print('Filtering noise from hotInFlowRate...')
 df_filter['hotInFlowRate'] = adaptiveMedianFilter(df_filter['hotInFlowRate'], 9, 301,0.5) # filter noise in hotInFlowRate
 print('hotInFlowRate complete!')
 print('Filtering noise from coldInFlowRate...')
-df_filter['coldInFlowRate'] = adaptiveMedianFilter(df_filter['coldInFlowRate'], 9, 301,0.5) # filter noise in coldInFlowRate
+df_filter['coldInFlowRate'] = adaptiveMedianFilter(df_filter['coldInFlowRate'], 1, 301,0.5) # filter noise in coldInFlowRate
 print('coldInFlowRate complete! \n')
 
 df_shift = df_filter.copy()
@@ -209,11 +209,20 @@ for i, row in df_agg.iterrows():
 print('Pulse aggregation complete!')
 
 
-df_final = df_agg[(df_agg['hotOutFlowRate'] != 0)]
-df_final['coldInFlowRate'] = df_final['coldInFlowRate']/60 # convert from gpm to gps
-df_final['hotInFlowRate'] = df_final['hotInFlowRate']/60 # convert from gpm to gps
-df_final['hotOutFlowRate'] = 1 # 1 pulse = 1 gal.  SO every indicates 1 gal has passed through the return system
-df_final['hotWaterUse'] = df_final['hotInFlowRate'] - df_final['hotOutFlowRate']
+df_pulse = df_agg[(df_agg['hotOutFlowRate'] != 0)]
+df_pulse['coldInFlowRate'] = df_pulse['coldInFlowRate']/60 # convert from gpm to gps
+df_pulse['hotInFlowRate'] = df_pulse['hotInFlowRate']/60 # convert from gpm to gps
+df_pulse['hotOutFlowRate'] = 1 # 1 pulse = 1 gal.  SO every indicates 1 gal has passed through the return system
+
+
+# flowQC: zero hot water flow
+for i, row in df_pulse.iterrows():
+    if row['hotInFlowRate'] < 1:
+        df_pulse.at[i, 'hotInFlowRate'] = 1
+
+df_pulse['hotWaterUse'] = df_pulse['hotInFlowRate'] - df_pulse['hotOutFlowRate']
+
+df_final = df_pulse.copy()
 
 
 print('QC Completed!\n')
