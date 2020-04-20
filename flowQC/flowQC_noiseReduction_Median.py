@@ -60,8 +60,8 @@ def adaptiveMedianFilter(signal, minWindowSize, maxWindowSize, threshold):
 
 print('Receiving inputs...\n')
 # Input parameters.
-beginDate = "'2019-04-03T00:00:00Z'"
-endDate = "'2019-04-03T06:00:00Z'"
+beginDate = "'2019-03-28T00:00:00Z'"
+endDate = "'2019-03-28T06:00:00Z'"
 bldgID = input("Input building ID: ").upper()
 bldgID = "'" + bldgID + "'"
 
@@ -95,7 +95,7 @@ df_filter['hotInFlowRate'] = adaptiveMedianFilter(df['hotInFlowRate'], 9, 301,0.
 print('hot in DONE')
 
 #print('cold in')
-#df_filter['coldInFlowRate'] = adaptiveMedianFilter(df['coldInFlowRate'], 1, 301,0.5)
+df_filter['coldInFlowRate'] = adaptiveMedianFilter(df['coldInFlowRate'], 1, 301,0.5)
                             # adaptiveMedianFilter(signal, minWindowSize, maxWindowSize, Threshold)
 #print('cold in DONE')
 
@@ -135,33 +135,35 @@ print('saving fig...')
 plt.show()
 # plt.savefig(filepath+'HOTflowQC_noiseReduction_fc=' + x + '.png')
 
-
-#fig = plt.figure(2, figsize=(14, 10))
-#fig.autofmt_xdate()
+"""
+fig = plt.figure(2, figsize=(14, 10))
+fig.autofmt_xdate()
 
 # 1st row - hot in
-#axHotFlow = plt.subplot2grid(gridsize, (0, 0))
-#plt.xticks(fontsize=8, rotation=35)
-#axHotFlow.plot(df['coldInFlowRate'], color='blue', label='raw coldIn')
-#axHotFlow.set_title('RAW cold-water flowrate', fontsize=10, weight='bold')
-#axHotFlow.set_ylabel('GPM')
-# axHotFlow.set_xlim(beginDate, endDate)
-# axHotFlow.set_ylim(0,40)
-#axHotFlow.grid(True)
+axHotFlow = plt.subplot2grid(gridsize, (0, 0))
+plt.xticks(fontsize=8, rotation=35)
+axHotFlow.plot(df['coldInFlowRate'], color='blue', label='raw coldIn')
+axHotFlow.set_title('RAW cold-water flowrate', fontsize=10, weight='bold')
+axHotFlow.set_ylabel('GPM')
+axHotFlow.set_xlim(beginDate, endDate)
+axHotFlow.set_ylim(0,40)
+axHotFlow.grid(True)
 
 # 2nd row - cold in
-##axColdFlow = plt.subplot2grid(gridsize, (1, 0))
-#plt.xticks(fontsize=8, rotation=35)
-#axColdFlow.plot(df_filter['coldInFlowRate'], color='navy', label='new coldIn')
-#axColdFlow.set_title('NEW cold-water flowrate', fontsize=10, weight='bold')
-#axColdFlow.set_ylabel('GPM')
-# axColdFlow.set_xlim(beginDate, endDate)
-# axColdFlow.set_ylim(0, 40)
-#axColdFlow.grid(True)
+axColdFlow = plt.subplot2grid(gridsize, (1, 0))
+plt.xticks(fontsize=8, rotation=35)
+axColdFlow.plot(df_filter['coldInFlowRate'], color='navy', label='new coldIn')
+axColdFlow.set_title('NEW cold-water flowrate', fontsize=10, weight='bold')
+axColdFlow.set_ylabel('GPM')
+#axColdFlow.set_xlim(beginDate, endDate)
+#axColdFlow.set_ylim(0, 40)
+axColdFlow.grid(True)
 
-#plt.tight_layout(pad=5, w_pad=2, h_pad=2.5)
+plt.tight_layout(pad=5, w_pad=2, h_pad=2.5)
 # print('saving fig...')
 #  plt.savefig(filepath + 'COLDflowQC_noiseReduction_fc=' + x + '.png')
-#plt.show()
+plt.show()
+
+"""
 
 print('done')
