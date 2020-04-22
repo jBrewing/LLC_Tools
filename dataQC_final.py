@@ -87,7 +87,7 @@ print('Assembling data query...')
 # Query returns a 'ResultSet" type.  Have to convert to pandas dataframe.
 query = """SELECT "coldInFlowRate","coldInTemp", "hotInFlowRate", "hotInTemp", "hotOutFlowRate", "hotOutTemp"
   FROM "flow" 
-  WHERE "buildingID" ="""+bldgIDQ1+""" AND time >= """+beginDate+""" AND time <= """+endDate+""""""
+  WHERE "buildingID" ="""+bldgIDQ1+""" AND time >= """+dates[0]+""" AND time <= """+dates[1]+""""""
 #   send query
 print('Retrieving data...')
 results = client.query(query)
@@ -156,11 +156,11 @@ print('coldInFlowRate complete! \n')
 df_shift = df_filter.copy()
 # flowQC: level shift
 print('Level shifting hotInFlowRate values...')
-if bldg == 'B':
+if bldg == 'B' and week == 4:
     df_2 = df_shift.truncate(before=pd.Timestamp('2019-04-16T19:40:00Z')).copy()
     df_2['hotInFlowRate'] = df_2['hotInFlowRate'] - 0.032
     df_shift['hotInFlowRate'].update(df_2['hotInFlowRate'])
-elif bldg == 'E':
+elif bldg == 'E' and week != 1:
     df_2 = df_shift.truncate(before=pd.Timestamp('2019-04-04T02:22:55Z')).copy()
     df_2['hotInFlowRate'] = df_2['hotInFlowRate'] - 0.031
     df_shift['hotInFlowRate'].update(df_2['hotInFlowRate'])
@@ -224,6 +224,9 @@ df_pulse['hotWaterUse'] = df_pulse['hotInFlowRate'] - df_pulse['hotOutFlowRate']
 
 df_final = df_pulse.copy()
 
+# Add building ID, influx write points requires all data coming from dataframe
+df_final['buildingID'] = bldg
+
 
 print('QC Completed!\n')
 
@@ -242,7 +245,7 @@ plt.xticks(fontsize=8, rotation=35)
 axHotFlow.plot(df_final['hotInFlowRate'], color='red', label='hotIn_final')
 axHotFlow.set_title('hot water flowrate', fontsize=10, weight ='bold')
 axHotFlow.set_ylabel('GPM')
-axHotFlow.set_xlim(beginDate, endDate)
+axHotFlow.set_xlim(dates[0], dates[1])
 axHotFlow.grid(True)
 
 # 2nd row - cold in
@@ -251,7 +254,7 @@ plt.xticks(fontsize=8, rotation=35)
 axColdFlow.plot(df_final['coldInFlowRate'], color='blue', label='coldWaterUse_final')
 axColdFlow.set_title('cold water flowrate', fontsize=10, weight ='bold')
 axColdFlow.set_ylabel('GPM')
-axColdFlow.set_xlim(beginDate, endDate)
+axColdFlow.set_xlim(dates[0], dates[1])
 axColdFlow.grid(True)
 
 # 3rd row - hot return
@@ -260,7 +263,7 @@ plt.xticks(fontsize=8, rotation=35)
 axHotWaterUse.plot(df_final['hotWaterUse'], color='maroon', label='hotWaterUse_final')
 axHotWaterUse.set_title('hotWaterUse', fontsize=10, weight ='bold')
 axHotWaterUse.set_ylabel('GPM')
-axHotWaterUse.set_xlim(beginDate, endDate)
+axHotWaterUse.set_xlim(dates[0], dates[1])
 #axHotWaterUse.set_ylim(-0.01, 0.05)
 axHotWaterUse.grid(True)
 
@@ -279,7 +282,7 @@ axHotTemp.plot(df_final['hotInTemp'], color='red', label='hotIn_final')
 axHotTemp.plot(df_final['hotOutTemp'], color='maroon', label='hotOut_final')
 axHotTemp.set_title('hot water temp', fontsize=10, weight ='bold')
 axHotTemp.set_ylabel('Temp (C)')
-axHotTemp.set_xlim(beginDate, endDate)
+axHotTemp.set_xlim(dates[0], dates[1])
 axHotTemp.grid(True)
 
 axColdTemp = plt.subplot2grid(gridsize, (1,0))
@@ -287,7 +290,7 @@ plt.xticks(fontsize=8, rotation=35)
 axColdTemp.plot(df_final['coldInTemp'], color='blue', label='1-Sec HOT Data')
 axColdTemp.set_title('cold water temp', fontsize=10, weight ='bold')
 axColdTemp.set_ylabel('Temp (C)')
-axColdTemp.set_xlim(beginDate, endDate)
+axColdTemp.set_xlim(dates[0], dates[1])
 axColdTemp.grid(True)
 
 plt.tight_layout(pad=5, w_pad=2, h_pad=2.5)
@@ -312,7 +315,7 @@ if x == 'Y':
                                           # 'hotWaterUse':mainFinal[['hotWaterUse']],
                                           # 'hotWaterUse_fixed':mainFinal[['hotWaterUse_fixed']]
                                            },
-                            tag_columns={'buildingID': bldg},
+                            tag_columns={'buildingID': df_final[['buildingID']]},
                             protocol='line', numeric_precision=10, batch_size=2000)
 
 else:
