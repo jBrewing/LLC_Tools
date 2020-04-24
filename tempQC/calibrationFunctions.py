@@ -87,7 +87,7 @@ def data_chunk(week):
         endDate = "'2019-04-11T23:59:59Z'"
     elif week == 4:
         beginDate = "'2019-04-12T00:00:00Z'"
-        endDate = "'2019-04-19T12:00:00Z'"
+        endDate = "'2019-04-19T11:59:59Z'"
 
     dates = [beginDate, endDate]
 

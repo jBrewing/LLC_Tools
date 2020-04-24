@@ -60,8 +60,8 @@ def adaptiveMedianFilter(signal, minWindowSize, maxWindowSize, threshold):
 
 print('Receiving inputs...\n')
 # Input parameters.
-beginDate = "'2019-03-28T00:00:00Z'"
-endDate = "'2019-03-28T06:00:00Z'"
+beginDate = "'2019-04-19T00:00:00Z'"
+endDate = "'2019-04-19T11:59:59Z'"
 bldgID = input("Input building ID: ").upper()
 bldgID = "'" + bldgID + "'"
 
