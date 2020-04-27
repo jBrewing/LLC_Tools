@@ -68,13 +68,27 @@ df4_pulses = df4.mean()
 
 df_trunc = df_fix.truncate(after=pd.Timestamp('2019-03-22T14:20:23Z')).copy()
 counter=0
+x = 1
+
 for i, row in df_trunc.iterrows():
-    if counter < 16:
-        df_trunc.at[i,'hotOutFlowRate'] = 0
-        counter += 1
-    else:
-        df_trunc.at[i, 'hotOutFlowRate'] = 1
-        counter = 0
+    if x < 4:
+        if counter < 16:
+            df_trunc.at[i, 'hotOutFlowRate'] = 0
+            counter += 1
+        else:
+            df_trunc.at[i, 'hotOutFlowRate'] = 1
+            counter = 0
+            x+= 1
+    elif x == 4 :
+        if counter < 17:
+            df_trunc.at[i, 'hotOutFlowRate'] = 0
+            counter += 1
+        else:
+            df_trunc.at[i, 'hotOutFlowRate'] = 1
+            x = 1
+            counter = 0
+
+
 
 
 df_fix['hotOutFlowRate'].update(df_trunc['hotOutFlowRate'])

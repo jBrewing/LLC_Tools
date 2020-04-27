@@ -13,8 +13,8 @@ print('Receiving inputs...\n')
 #beginDate = "'2019-03-22T12:00:00Z'"
 #endDate = "'2019-03-24T00:00:00Z'"
 
-bldgs = ['F']
-weeks = [1]
+bldgs = ['C']
+weeks = [1,2,3,4]
 
 for bldg in bldgs:
     for week in weeks:
@@ -88,9 +88,9 @@ for bldg in bldgs:
         use['buildingID'] = bldgID
 
         # Can't have neative energy.  Values are very close to 0.  So 0.
-        for i, row in use.iterrows():
-            if row['pipeLoss_energy'] < 0:
-                use.at[i, 'pipeLoss_energy'] = 0
+        #for i, row in use.iterrows():
+        #    if row['pipeLoss_energy'] < 0:
+        #        use.at[i, 'pipeLoss_energy'] = 0
 
         print('Water use and water-related energy use calculated! \n')
 
@@ -136,6 +136,7 @@ for bldg in bldgs:
         axUseLose.plot(use['pipeLoss_energy'], color = 'black', linewidth=0.5, label = 'Energy LOST')
         axUseLose.set_title('Energy USE/LOST', fontsize=10, weight ='bold')
         axUseLose.set_ylabel('MJ')
+        #axUseLose.set_ylim(0, 2.75)
         axUseLose.grid(True)
         axUseLose.legend()
 
@@ -145,7 +146,7 @@ for bldg in bldgs:
         axSupplyReturn.plot(use['hotReturn_energy'], color='maroon', label = 'HotReturn Energy')
         axSupplyReturn.set_title('hot water SUPPLY/RETURN energy ', fontsize=10, weight ='bold')
         axSupplyReturn.set_ylabel('MJ')
-        axSupplyReturn.set_ylim(0,)
+        axSupplyReturn.set_ylim(0,2.75)
         axSupplyReturn.grid(True)
         axSupplyReturn.legend()
 

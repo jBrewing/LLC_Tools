@@ -126,6 +126,7 @@ if bldg == 'B' and week == 1:
     df_2.rename(columns={'hotInTemp': 'hotInTemp_D'}, inplace=True)
 
     mainHot = df['hotInTemp'].truncate(after=pd.Timestamp('2019-03-27T16:00:00Z')).copy()
+    mainHot = mainHot.to_frame()
     mainHotQC = pd.merge(mainHot, df_2, on='time')
 
     print('Calculating new temp values...')
@@ -161,12 +162,24 @@ if bldg == 'E' and week == 1:
     df_2 = df_filter.truncate(after=pd.Timestamp('2019-03-22T14:20:23Z')).copy()
     counter = 0
     for i, row in df_2.iterrows():
-        if counter < 16:  # average pulse rate in bldg E over this timeframe = 17.26.  N-1 for loop.
-            df_2.at[i, 'hotOutFlowRate'] = 0
-            counter += 1
-        else:
-            df_2.at[i, 'hotOutFlowRate'] = 1
-            counter = 0
+        if x < 4:
+            if counter < 16:                        # average pulse rate for this timeframe from other three weeks
+                df_2.at[i, 'hotOutFlowRate'] = 0    # is 17.26 seconds/pulse.  Mod code to add 18 second pulse every
+                counter += 1                        # every 4th pulse inserted to account for 0.26 second offset
+            else:
+                df_2.at[i, 'hotOutFlowRate'] = 1
+                counter = 0
+                x += 1
+        elif x == 4:
+            if counter < 17:
+                df_2.at[i, 'hotOutFlowRate'] = 0
+                counter += 1
+            else:
+                df_2.at[i, 'hotOutFlowRate'] = 1
+                x = 1
+                counter = 0
+
+
     df_filter['hotOutFlowRate'].update(df_2['hotOutFlowRate'])
 
 df_shift = df_filter.copy()
