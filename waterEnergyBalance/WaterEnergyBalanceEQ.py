@@ -13,7 +13,7 @@ print('Receiving inputs...\n')
 #beginDate = "'2019-03-22T12:00:00Z'"
 #endDate = "'2019-03-24T00:00:00Z'"
 
-bldgs = ['C']
+bldgs = ['F']
 weeks = [1,2,3,4]
 
 for bldg in bldgs:
@@ -85,7 +85,7 @@ for bldg in bldgs:
         # Pipe ENERGY loss  HotSupplyE - HotReturnE - HotUseE
         use['pipeLoss_energy'] = (use['hotSupply_energy'] - use['hotReturn_energy'] - use['hotUse_energy'])# use megaJoules
 
-        use['buildingID'] = bldgID
+        use['buildingID'] = bldg
 
         # Can't have neative energy.  Values are very close to 0.  So 0.
         #for i, row in use.iterrows():
@@ -93,7 +93,6 @@ for bldg in bldgs:
         #        use.at[i, 'pipeLoss_energy'] = 0
 
         print('Water use and water-related energy use calculated! \n')
-
 
 
 

@@ -134,7 +134,6 @@ if bldg == 'B' and week == 1:
     df['hotInTemp'].update(mainHotQC['hotInTemp']) # update original dataframe, df
     print('New hotInTemp values for BLDG B calculated!\n')
 
-
 # tempQC: level shift
 df_temp = df.copy()
 # Add calibration factor to each value
@@ -144,7 +143,9 @@ for (column, cal) in zip(columns, calibration_temp(bldg)):
     df_temp[column] = df_temp[column] + cal
 print('Level shifting temp values complete!\n')
 
+
 # Flow QC ###################
+
 
 # flowQC: filter noise
 df_filter=df_temp.copy()
@@ -158,6 +159,7 @@ df_filter['coldInFlowRate'] = adaptiveMedianFilter(df_filter['coldInFlowRate'], 
 print('coldInFlowRate complete! \n')
 
 # flowQC: fix return flow for bldg E
+x=0
 if bldg == 'E' and week == 1:
     df_2 = df_filter.truncate(after=pd.Timestamp('2019-03-22T14:20:23Z')).copy()
     counter = 0

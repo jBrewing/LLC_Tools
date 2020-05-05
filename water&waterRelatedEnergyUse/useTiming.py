@@ -11,6 +11,7 @@ beginDate = "'2019-03-22T12:00:00Z'"
 endDate = "'2019-04-05T12:00:00Z'"
 
 bldgs = ['C', 'D', 'E', 'F']
+blgds = 'C'
 
 
 # Retrieve data
@@ -28,13 +29,13 @@ for bldg in bldgs:
     # requirements.  Fields/Tags must be bracketed with " " and the field/tag values must be bracketed with ' '.
     # Query returns a 'ResultSet" type.  Have to convert to pandas dataframe.
     bldgID = "'" + bldg + "'"
-    query = """SELECT * FROM "LLC" WHERE "buildingID" ="""+bldgID+""" AND time >= """+beginDate+""" AND time <= """+endDate+""""""
+    query = """SELECT * FROM "WaWRE" WHERE "buildingID" ="""+bldgID+""" AND time >= """+beginDate+""" AND time <= """+endDate+""""""
     #   send query
     print('Retrieving data...')
     # Query returns a 'ResultSet" type.  Have to convert to pandas dataframe.
     # Convert returned ResultSet to Pandas dataframe with list and get_points.
     results = client.query(query)
-    df = pd.DataFrame(list(results.get_points(measurement='LLC')))
+    df = pd.DataFrame(list(results.get_points(measurement='WaWRE')))
 
     # Set dataframe index as datetime.
     df['time'] = pd.to_datetime(df['time'])
@@ -45,6 +46,8 @@ for bldg in bldgs:
     hour = df.groupby(df.index.hour).sum()# Group by timestamp index into day
     day = df.groupby(df.index.weekday).sum()
     week = df.groupby(df.index.week).sum()
+
+
 
 
     print('done')
