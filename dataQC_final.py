@@ -108,6 +108,8 @@ print('Data retrieved!\n')
 # tempQC: correlation, BLDG B
 if bldg == 'B' and week == 1:
 
+
+
     # Adjust inaccurate BldgB temp data with correlation from Bldg D temp data
     print ('Fetching data to adjust BLDG B temp data...')
     bldgIDQ2 = "'D'"
@@ -133,6 +135,15 @@ if bldg == 'B' and week == 1:
     mainHotQC['hotInTemp'] = 8.25122766 + 0.8218035674 * mainHotQC['hotInTemp_D']
     df['hotInTemp'].update(mainHotQC['hotInTemp']) # update original dataframe, df
     print('New hotInTemp values for BLDG B calculated!\n')
+
+
+    temp_old = df['hotInTemp'].iloc[0] # Because of differences in missed second observations, have to
+    for i, row in df.iterrows():       # parse through QCed dataframe and adjust unadjusted values
+        x = row['hotInTemp']           # i.e. B temp data has 12:00:01 while D temp data does not, so
+        if x < 40:                     # that timestamp is not updated with QC.  Fix by replacing with prev temp value
+            df.at[i, 'hotInTemp'] = temp_old
+        else:
+            temp_old = row['hotInTemp']
 
 # tempQC: level shift
 df_temp = df.copy()
