@@ -10,7 +10,7 @@ print('Receiving inputs...\n')
 bldg = input("Input building ID: ").upper()
 bldgID = "'" + bldg + "'"
 #    dates
-beginDate = "'2019-04-12T00:00:00Z'"
+beginDate = "'2019-03-22T12:00:00Z'"
 endDate = "'2019-04-19T12:00:00Z'"
 
 # Retrieve data
@@ -62,7 +62,7 @@ plt.xticks(fontsize=8, rotation=35)
 axColdTemp.plot(df['coldInTemp'], color='navy')
 axColdTemp.set_title('cold water temmp', fontsize=10, weight='bold')
 axColdTemp.set_ylabel('C')
-axColdTemp.set_ylim(14, 23)
+axColdTemp.set_ylim(10, 25)
 axColdTemp.grid(True)
 
 fig.show()

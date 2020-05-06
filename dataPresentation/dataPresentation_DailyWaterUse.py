@@ -43,23 +43,29 @@ E = hot[hot['buildingID'] == 'E'] # Divide hot dataframe by building
 B = hot[hot['buildingID'] == 'B']
 D = hot[hot['buildingID'] == 'D']
 
+E_test = E.resample('1D').sum()/60
 
 print('Resampling data...')
 E = E.groupby(E.index.day).sum()/60 # Group by timestamp index into day
 B = B.groupby(B.index.day).sum()/60 # Sum values in bins and divide by 60 to convert gpm to gps
 D = D.groupby(D.index.day).sum()/60 # 1s of 1 gps = actual flowrate
 
+
+
 E['hotWaterUse'] = E['hotInFlowRate'] - E['hotOutFlowRate'] # Calculate hot water use by subtracting agg hotInFlowRate
 B['hotWaterUse'] = B['hotInFlowRate'] - B['hotOutFlowRate'] # from agg hotOutFlowRate
 D['hotWaterUse'] = D['hotInFlowRate'] - D['hotOutFlowRate']
+E_test['hotWaterUse'] = E_test['hotInFlowRate'] - E_test['hotOutFlowRate']
 E.drop(8, axis=0, inplace=True)
 B.drop(8, axis=0, inplace=True)
 D.drop(8, axis=0, inplace=True)
+#E_test.drop(8, axis=0, inplace=True)
 
 results = pd.DataFrame() # Create results dataframe to plot
 results['E'] = E['hotWaterUse']
 results['D'] = D['hotWaterUse']
 results['B'] = B['hotWaterUse']
+
 
 
 print('Plotting results...')
