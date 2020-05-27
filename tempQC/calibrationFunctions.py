@@ -31,12 +31,12 @@ def calibration_temp(BldgID):
         hotOutCal = 1.99
         coldInCal = 0
     elif "E" in BldgID:
-        hotInCal = 5.79
-        hotOutCal = 10.05
+        hotInCal = 3.081 #prev val was 5.79
+        hotOutCal = 6.431 # prev val was 10.05
         coldInCal = 0
     elif "F" in BldgID:
-        hotInCal = 5.79
-        hotOutCal = 3.94
+        hotInCal = 3.622 # prev val was 5.79
+        hotOutCal = 2.205 # prev val was 3.94
         coldInCal = 0
 
     hotInCal = float(hotInCal)

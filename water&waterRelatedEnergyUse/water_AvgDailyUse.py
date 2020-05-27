@@ -2,6 +2,11 @@ import pandas as pd
 from influxdb import InfluxDBClient
 import matplotlib.pyplot as plt
 import numpy as np
+import os
+
+
+os.chdir('/Users/augustus/Desktop/GRA/Thesis/Figures/wWRE/')
+
 
 # accept inputs
 print('Receiving inputs...\n')
@@ -57,13 +62,25 @@ D = df[df['buildingID'] == 'D']
 E = df[df['buildingID'] == 'E']
 F = df[df['buildingID'] == 'F']
 
-B = B.groupby(B.index.weekday).sum() # Group by timestamp index into day
-C = C.groupby(C.index.weekday).sum()
-D = D.groupby(D.index.weekday).sum()
-E = E.groupby(E.index.weekday).sum()
-F = F.groupby(F.index.weekday).sum()
+B = B.resample('1D').sum() # Have to resample to 1D so groupby mean function can work
+C = C.resample('1D').sum()
+D = D.resample('1D').sum()
+E = E.resample('1D').sum()
+F = F.resample('1D').sum()
 
-dfs = [B,C,D,E,F]# Group by timestamp index into day
+B_sum = B.groupby(B.index.weekday).mean() # Group by timestamp index into day
+C_sum = C.groupby(C.index.weekday).mean()
+D_sum = D.groupby(D.index.weekday).mean()
+E_sum = E.groupby(E.index.weekday).mean()
+F_sum = F.groupby(F.index.weekday).mean()
+
+B_err = B.groupby(B.index.weekday).std() # Group by timestamp index into day
+C_err = C.groupby(C.index.weekday).std()
+D_err = D.groupby(D.index.weekday).std()
+E_err = E.groupby(E.index.weekday).std()
+F_err = F.groupby(F.index.weekday).std()
+
+
 time_day = ['Mon', 'Tues', 'Wed', 'Thur', 'Fri', 'Sat','Sun']
 
 
@@ -74,97 +91,75 @@ fig = plt.figure(1, figsize=(8,10), tight_layout=True)
 x = np.arange(len(time_day))
 width = 0.2
 
-
+# building B
 ax1 = plt.subplot2grid(gridsize, (0,0))
-p1 = ax1.bar(x=x-width, height=B['hotWaterUse'],
-            width=width, capsize=5, label = 'Hot Water Use', color='red')
-p2 = ax1.bar(x=x, height=B['coldWaterUse'],
-            width=width, capsize=5, label = 'Cold Water Use', color='blue')
+p1 = ax1.bar(x=x-0.5*width, height=B_sum['hotWaterUse'],
+            width=width, capsize=5, label = 'Hot Water Use', color='red',yerr = B_err['hotWaterUse'])
+p2 = ax1.bar(x=x+0.5*width, height=B_sum['coldWaterUse'],
+            width=width, capsize=5, label = 'Cold Water Use', color='blue',yerr = B_err['coldWaterUse'])
 ax1.set_ylabel("Bldg B \n Volume (m^3)",fontsize = 14)
-ax1.set_title('Hot and Cold Water Use', fontsize =14 )
-ax1.legend()
+#ax1.set_title('Hot and Cold Water Use', fontsize =14)
+ax1.set_ylim (0, 6)
+#ax1.legend(loc=1, ncol = 2)
 plt.xticks([])
 plt.yticks(fontsize=12)
 
-
+# building C
 ax2 = plt.subplot2grid(gridsize, (1,0))
-p1 = ax2.bar(x=x-width, height=C['hotWaterUse'],
-            width=width, capsize=5, label = 'Hot Water Use', color='red')
-p2 = ax2.bar(x=x, height=C['coldWaterUse'],
-            width=width, capsize=5, label = 'Cold Water Use', color='blue')
+p1 = ax2.bar(x=x-0.5*width, height=C_sum['hotWaterUse'],
+            width=width, capsize=5, label = 'Hot Water Use', color='red',yerr = C_err['hotWaterUse'])
+p2 = ax2.bar(x=x+0.5*width, height=C_sum['coldWaterUse'],
+            width=width, capsize=5, label = 'Cold Water Use', color='blue',yerr = C_err['coldWaterUse'])
 ax2.set_ylabel("Bldg C \n Volume (m^3)",fontsize = 14)
+ax2.set_ylim (0,6)
 plt.xticks([])
 plt.yticks(fontsize=12)
 
-
+# building D
 ax3 = plt.subplot2grid(gridsize, (2,0))
-p1 = ax3.bar(x=x-width, height=D['hotWaterUse'],
-            width=width, capsize=5, label = 'Hot Water Use', color='red')
-p2 = ax3.bar(x=x, height=D['coldWaterUse'],
-            width=width, capsize=5, label = 'Cold Water Use', color='blue')
+p1 = ax3.bar(x=x-0.5*width, height=D_sum['hotWaterUse'],
+            width=width, capsize=5, label = 'Hot Water Use', color='red',yerr = D_err['hotWaterUse'])
+p2 = ax3.bar(x=x+0.5*width, height=D_sum['coldWaterUse'],
+            width=width, capsize=5, label = 'Cold Water Use', color='blue',yerr = D_err['coldWaterUse'])
 ax3.set_ylabel("Bldg D \n Volume (m^3)",fontsize = 14)
+ax3.set_ylim (0, 6)
 plt.xticks([])
 plt.yticks(fontsize=12)
 
-
+# building E
 ax4 = plt.subplot2grid(gridsize, (3,0))
-p1 = ax4.bar(x=x-width, height=E['hotWaterUse'],
-            width=width, capsize=5, label = 'Hot Water Use',color='red')
-p2 = ax4.bar(x=x, height=E['coldWaterUse'],
-            width=width, capsize=5, label = 'Cold Water Use', color='blue')
+p1 = ax4.bar(x=x-0.5*width, height=E_sum['hotWaterUse'],
+            width=width, capsize=5, label = 'Hot Water Use',color='red',yerr = E_err['hotWaterUse'])
+p2 = ax4.bar(x=x+0.5*width, height=E_sum['coldWaterUse'],
+            width=width, capsize=5, label = 'Cold Water Use', color='blue',yerr = E_err['coldWaterUse'])
 ax4.set_ylabel("Bldg E \n Volume (m^3)", fontsize = 14)
+ax4.set_ylim (0, 6)
 plt.xticks([])
 plt.yticks(fontsize=12)
 
+# building F
 ax5 = plt.subplot2grid(gridsize, (4,0))
-p1 = ax5.bar(x=x-width, height=F['hotWaterUse'],
-            width=width, capsize=5, label = 'Hot Water Use',color='red')
-p2 = ax5.bar(x=x, height=F['coldWaterUse'],
-            width=width, capsize=5, label = 'Cold Water Use', color='blue')
-ax5.set_xlabel("Day", fontsize = 16, weight ='bold')
+p1 = ax5.bar(x=x-0.5*width, height=F_sum['hotWaterUse'],
+            width=width, capsize=5, label = 'Hot Water Use',color='red',yerr = F_err['hotWaterUse'])
+p2 = ax5.bar(x=x+0.5*width, height=F_sum['coldWaterUse'],
+            width=width, capsize=5, label = 'Cold Water Use', color='blue', yerr=F_err['coldWaterUse'])
+ax5.set_xlabel("Day", fontsize = 18, weight ='bold')
 ax5.set_ylabel("Bldg F \n Volume (m^3)", fontsize = 14)
+ax5.set_ylim (0, 6)
 plt.grid(False, axis = 'x')
 plt.xticks(np.arange(7),('Mon', 'Tues', 'Wed', 'Thur', 'Fri', 'Sat','Sun'),fontsize=14)
 plt.yticks(fontsize=12)
-
-
 plt.tight_layout()
-plt.show()
 
-
-for df in dfs:
-    print('Plotting results...')
-    # Create x-axis ticks to plot
-    time = ['Mon', 'Tues', 'Wed', 'Thur', 'Fri', 'Sat','Sun']
-
-    fig, ax = plt.subplots(figsize=(14,6))
-    x = np.arange(len(time))
-    width = 0.2
-
-    p1 = ax.bar(x=x-width, height=results['B'],
-                width=width, capsize=5, label = 'Bldg B')
-    p2 = ax.bar(x=x, height=results['D'],
-                width=width, capsize=5, label = 'Bldg D')
-    p3 = ax.bar(x=x+width, height=results['E'],
-                width=width, capsize=5, label = 'Bldg E')
-
-
-    ax.grid(which='both',axis='y', color='grey', linewidth='1', alpha=0.5)
-    ax.set_xlabel('Day', fontsize=16)
-    ax.set_ylabel('Water Use (gal)', fontsize=16)
-    ax.set_xticks(x)
-    ax.set_xticklabels(time)
-    ax.legend()
-    ax.set_title('Daily Hot Water Use', fontsize =18)
-    ax.tick_params(labelsize='large')
-
-
-
-# Save fig
-os.chdir('/Users/augustus/Desktop/GRA/ResearchComponents/dataPresentation/figures/')
-plt.savefig('DailyWaterUse.png')
-
+print('Saving fig...')
+plt.savefig('wAWRE_avgDailyWaterUse.png')
 
 plt.show()
+
+
+
+
+
+
 
 print('done')

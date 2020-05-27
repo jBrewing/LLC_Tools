@@ -4,9 +4,16 @@ from influxdb import DataFrameClient
 import matplotlib.pyplot as plt
 from tempQC.calibrationFunctions import calibration_temp, calibration_flow, data_chunk
 import numpy as np
+import os
 
 
+os.chdir('/Users/augustus/Desktop/GRA/Thesis/Figures/data/')
+file = 'BLDG_C_03-23_02-24_RAWflow.csv'
 
+df = pd.read_csv(file)
+
+df['time'] = pd.to_datetime(df['time'])
+df.set_index('time', inplace=True)
 
 def adaptiveMedianFilter(signal, minWindowSize, maxWindowSize, threshold):
     filteredSignal = []
@@ -59,6 +66,7 @@ def adaptiveMedianFilter(signal, minWindowSize, maxWindowSize, threshold):
     print("100.00 %%, window size = %3d" % windowSize)
     return filteredSignal
 
+
 # accept inputs
 print('Receiving inputs...\n')
 #    building ID
@@ -68,7 +76,7 @@ bldgIDQ1 = "'" + bldg + "'"
 week = int(input("Input week #: "))
 beginDate = "'2019-03-22T12:00:00Z'"
 endDate = "'2019-03-22T18:00:00Z'"
-
+"""
 dates = data_chunk(week)
 
 # Retrieve data
@@ -85,11 +93,14 @@ print('Assembling data query...')
 # Build query by concatenating inputs into query.  InfluxDB query language has several
 # requirements.  Fields/Tags must be bracketed with " " and the field/tag values must be bracketed with ' '.
 # Query returns a 'ResultSet" type.  Have to convert to pandas dataframe.
-query = """SELECT "coldInFlowRate","coldInTemp", "hotInFlowRate", "hotInTemp", "hotOutFlowRate", "hotOutTemp"
-  FROM "flow" 
-  WHERE "buildingID" ="""+bldgIDQ1+""" AND time >= """+dates[0]+""" AND time <= """+dates[1]+""""""
+"""
+#query = """SELECT "coldInFlowRate","coldInTemp", "hotInFlowRate", "hotInTemp", "hotOutFlowRate", "hotOutTemp"
+#  FROM "flow"
+#  WHERE "buildingID" ="""+bldgIDQ1+""" AND time >= """+dates[0]+""" AND time <= """+dates[1]+""""""
 #   send query
+"""
 print('Retrieving data...')
+
 results = client.query(query)
 # Query returns a 'ResultSet" type.  Have to convert to pandas dataframe.
 # Convert returned ResultSet to Pandas dataframe with list and get_points.
@@ -97,6 +108,7 @@ df = pd.DataFrame(list(results.get_points(measurement='flow')))
 # Set dataframe index as datetime.
 df['time'] = pd.to_datetime(df['time'])
 df.set_index('time', inplace=True)
+"""
 
 print('Data retrieved!\n')
 
@@ -155,11 +167,16 @@ for (column, cal) in zip(columns, calibration_temp(bldg)):
 print('Level shifting temp values complete!\n')
 
 
+# tempQC:  point fix.  Unless all heat exited the universe in this one second, Temp did not drop to -1333 deg Celsius
+if bldg == 'F' and week == 4:
+    df_temp.at['2019-04-15T15:55:33', 'hotInTemp'] = 53.18400
+
 # Flow QC ###################
 
 
 # flowQC: filter noise
 df_filter=df_temp.copy()
+
 print('Filtering noise from hotInFlowRate...')
 df_filter['hotInFlowRate'] = adaptiveMedianFilter(df_filter['hotInFlowRate'], 9, 301,0.5) # filter noise in hotInFlowRate
                            # adaptiveMedianFilter(signal, minWindowSize, maxWindowSize, Threshold)
@@ -168,6 +185,10 @@ print('Filtering noise from coldInFlowRate...')
 df_filter['coldInFlowRate'] = adaptiveMedianFilter(df_filter['coldInFlowRate'], 1, 301,0.5) # filter noise in coldInFlowRate
                             # adaptiveMedianFilter(signal, minWindowSize, maxWindowSize, Threshold)
 print('coldInFlowRate complete! \n')
+
+
+
+
 
 # flowQC: fix return flow for bldg E
 x=0
@@ -194,6 +215,7 @@ if bldg == 'E' and week == 1:
 
 
     df_filter['hotOutFlowRate'].update(df_2['hotOutFlowRate'])
+
 
 df_shift = df_filter.copy()
 # flowQC: level shift
@@ -342,6 +364,7 @@ plt.show()
 x = input('Do you want to write to database? (y/n): ').upper()
 
 if x == 'Y':
+
 # WritePoints
     print('Connecting to database...')
     clientdf = DataFrameClient(host='odm2equipment.uwrl.usu.edu', port=8086, username='root',password='foobar123')
@@ -357,6 +380,12 @@ if x == 'Y':
                                            },
                             tag_columns={'buildingID': df_final[['buildingID']]},
                             protocol='line', numeric_precision=10, batch_size=2000)
+    clientdf.write_points(dataframe=df_final, measurement='LLC',
+                            field_columns={'hotInTemp': df_final[['hotInTemp']],
+                                           'hotOutTemp': df_final[['hotOutTemp']]
+                                           },
+                          tag_columns={'buildingID': df_final[['buildingID']]},
+                          protocol='line', numeric_precision=10, batch_size=2000)
 
 else:
     print('Better luck next time...')
