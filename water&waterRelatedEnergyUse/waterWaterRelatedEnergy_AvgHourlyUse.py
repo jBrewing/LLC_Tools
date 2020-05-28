@@ -1,6 +1,8 @@
 import pandas as pd
 from influxdb import InfluxDBClient
 import matplotlib.pyplot as plt
+from matplotlib.patches import Patch
+from matplotlib.lines import Line2D
 import os
 
 os.chdir('/Users/augustus/Desktop/GRA/Thesis/Figures/wWRE/')
@@ -69,35 +71,37 @@ for bldg in bldgs:
 
     fig1, ax1 = plt.subplots(figsize=(14,8))
 
-    ax1.plot(time_hour, hour['hotUse_energy'], '--', color='darkorange', label = 'to wastewater')
+    ax1.plot(time_hour, hour['hotUse_energy'], '--', color='darkorange', label = 'Water-Related\nEnergy Use')
     ax1.fill_between(time_hour, 0, hour['hotUse_energy'], color='darkorange', alpha=0.75)
-    ax1.set_ylabel('Energy Use (MJ)', fontsize=14)
+    ax1.set_ylabel('Energy Use (MJ)', fontsize=18)
     ax1.set_xlim('1am','12am')
-    #ax1.set_ylim(0,65)
+    ax1.set_ylim(0,)
     ax1.set_xlim('1am', '12am')
     ax1.grid(which='both', axis='x', color='grey', linewidth='1', alpha=0.5)
-    ax1.set_xlabel('Time', fontsize=16)
-    ax1.set_title('Avg. Hourly Water & Water Related Energy Use: Building '+bldg)
-    ax1.legend(loc = 1)
+    ax1.set_xlabel('Time', fontsize=18)
+    #ax1.set_title('Avg. Hourly Water & Water Related Energy Use: Building '+bldg)
     plt.tick_params(labelsize='large')
-    plt.xticks(rotation=35)
+    plt.xticks(fontsize=14, rotation=35)
+    plt.yticks(fontsize=14)
 
+    legend_elements=[Patch(facecolor='darkorange', edgecolor='grey', label='Water-Related\nEnergy Use')]
+    ax1.legend(handles = legend_elements, loc=4, fontsize=14)
 
     ax2 = ax1.twinx()
 
 
-    ax2.plot(time_hour, hour['hotWaterUse'],'-', color='red', linewidth=3, zorder =1)
-    ax2.plot(time_hour, hour['coldWaterUse'],'-', color='blue', linewidth=3, zorder=2)
-    ax2.set_ylabel('Water Use (m^3)', fontsize=16)
-    #ax2.set_ylim(0,0.4)
+    ax2.plot(time_hour, hour['hotWaterUse'],'-', color='red', linewidth=3, zorder =1, label='Hot Water Use')
+    ax2.plot(time_hour, hour['coldWaterUse'],'-', color='blue', linewidth=3, zorder=2, label= 'Cold Water Use')
+    ax2.set_ylabel('Water Use (m^3)', fontsize=18)
+    ax2.set_ylim(0,)
     plt.tick_params(labelsize='large')
-    ax2.legend(loc = 2)
+    ax2.legend(loc = 2, fontsize=14)
 
 
     fig1.tight_layout()
 
     print('Saving figure...')
-    plt.savefig('wWRE_hourlyAvgUse.png')
+    plt.savefig('W-WRE_hourlyAvgUse_'+bldg+'.png')
 
     plt.show()
 
@@ -110,19 +114,27 @@ for bldg in bldgs:
     ax2.fill_between(time_hour, energy['diff_HS-pipe'],energy['hotSupply_energy'], color='black', alpha=0.75)
     ax2.fill_between(time_hour, energy['diff_HS-pipe'],energy['hotReturn_energy'],  color='darkorange', alpha=0.75)
     ax2.fill_between(time_hour, 0, energy['hotReturn_energy'], color = 'maroon', alpha=0.75)
-    ax2.set_ylabel('Energy Use (MJ)', fontsize=16)
+    ax2.set_ylabel('Energy Use (MJ)', fontsize=18)
     ax2.set_ylim(0,)
     ax2.set_xlim('1am', '12am')
     ax2.grid(which='both', axis='x', color='grey', linewidth='1', alpha=0.5)
-    ax2.set_xlabel('Time', fontsize=16)
+    ax2.set_xlabel('Time', fontsize=18)
     plt.tick_params(labelsize='large')
-    plt.xticks(rotation=35)
+    plt.xticks(fontsize=14,rotation=35)
+    plt.yticks(fontsize=14)
 
 
-    
-    
+    legend_elements = [Line2D([0], [0], color = 'red', lw=2, label='Energy supplied to building'),
+                       Patch(facecolor='black', edgecolor='grey', label='Energy lost to pipe'),
+                       Patch(facecolor='darkorange', edgecolor='grey', label = 'Water-related energy use'),
+                       Patch(facecolor='maroon', edgecolor='grey', label='Energy returned to boilers')]
+    ax2.legend(handles = legend_elements,loc=4,fontsize=14)
     fig2.tight_layout()
-    fig2.show()
+
+    plt.savefig('WRE_hourlyAvgUse_'+bldg+'.png')
+
+    plt.show()
+
 
 
 
