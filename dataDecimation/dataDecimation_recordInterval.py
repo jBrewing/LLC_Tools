@@ -51,11 +51,7 @@ df_5t = df.resample('5T', label='right').sum()
 df_30t = df.resample('30T', label='right').sum()
 df_1h = df.resample('1h', label='right').sum()
 
-#df_30s = df_30s * 30 # multiply first obs by period value represents
-#df_1t = df_1t * 60 # i.e. a 1 sec obs representing 1 min = obs * 60s
-#df_5t = df_5t* 300
-#df_30t = df_30t * 1800
-#df_1h = df_1h * 3600
+
 
 # cumulatively sum water related energy use
 print('Summing results...\n')
@@ -84,20 +80,20 @@ fig,ax = plt.subplots(figsize=(14, 10))
 
 fig.autofmt_xdate()
 
-ax.plot(df_raw['hotUse_energy'], color='red', label='Pulse Aggregated Data')
-ax.plot(df_30s['hotUse_energy'], color='blue', label = '30sec Sample')
-ax.plot(df_1t['hotUse_energy'], color='green', label = '1min Sample')
-ax.plot(df_5t['hotUse_energy'], color='orange', label = '5min Sample')
-ax.plot(df_30t['hotUse_energy'], color='black', label = '30min Sample')
-ax.plot(df_1h['hotUse_energy'], color='purple', label = '1h Sample')
+ax.plot(df_raw['hotUse_energy'], color='red', label='Pulse Aggregated Timestep')
+ax.plot(df_30s['hotUse_energy'], color='blue', label = '30sec Recording Interval')
+ax.plot(df_1t['hotUse_energy'], color='green', label = '1min Recording Interval')
+ax.plot(df_5t['hotUse_energy'], color='orange', label = '5min Recording Interval')
+ax.plot(df_30t['hotUse_energy'], color='black', label = '30min Recording Interval')
+ax.plot(df_1h['hotUse_energy'], color='purple', label = '1h Recording Interval')
 
 ax.legend( fontsize=14)
 ax.grid(True)
 
 ax.set_xlim(beginDate, endDate)
 ax.set_ylim(0,)
-ax.set_ylabel('MJ', fontsize = 18,fontweight='bold')
-ax.set_xlabel('Date', fontsize=18,fontweight='bold')
+ax.set_ylabel('MJ/timestep', fontsize = 18,fontweight='bold')
+ax.set_xlabel('Time\n(Date)', fontsize=18,fontweight='bold')
 plt.yticks(fontsize=14)
 plt.xticks(fontsize=14, rotation =25)
 
@@ -116,18 +112,18 @@ fig2, ax2 = plt.subplots(figsize=(14, 8))
 fig2.autofmt_xdate()
 
 ax2.plot(df_raw['hotUse_energy'], color='red', label='Pulse Aggregated Data')
-ax2.plot(df_30s['hotUse_energy'], color='blue', label = '30sec Sample')
-ax2.plot(df_1t['hotUse_energy'], color='green', label = '1min Sample')
-ax2.plot(df_5t['hotUse_energy'], color='orange', label = '5min Sample')
-ax2.plot(df_30t['hotUse_energy'], color='black', label = '30min Sample')
-ax2.plot(df_1h['hotUse_energy'], color='purple', label = '1h Sample')
+ax2.plot(df_30s['hotUse_energy'], color='blue', label = '30sec Recording Interval')
+ax2.plot(df_1t['hotUse_energy'], color='green', label = '1min Recording Interval')
+ax2.plot(df_5t['hotUse_energy'], color='orange', label = '5min Recording Interval')
+ax2.plot(df_30t['hotUse_energy'], color='black', label = '30min Recording Interval')
+ax2.plot(df_1h['hotUse_energy'], color='purple', label = '1h Recording Interval')
 
 ax2.legend( fontsize=14)
 ax2.grid(True)
 ax2.set_xlim("'2019-03-28T04:50:00Z'", "'2019-03-28T06:10:00Z'")
 ax2.set_ylim(0,10)
-ax2.set_ylabel('MJ', fontsize = 18, fontweight='bold')
-ax2.set_xlabel('Date', fontsize=18,fontweight='bold')
+ax2.set_ylabel('MJ/timestep', fontsize = 18, fontweight='bold')
+ax2.set_xlabel('Time\n(Date)', fontsize=18,fontweight='bold')
 plt.yticks(fontsize=14)
 plt.xticks(fontsize=14, rotation =25)
 

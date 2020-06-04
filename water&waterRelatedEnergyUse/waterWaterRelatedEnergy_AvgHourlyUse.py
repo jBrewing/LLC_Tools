@@ -16,7 +16,7 @@ print('Receiving inputs...\n')
 beginDate = "'2019-03-22T12:00:00Z'"
 endDate = "'2019-04-19T12:00:00Z'"
 
-bldgs = ['B','C', 'D', 'E', 'F']
+bldgs = ['B','C','D','E','F']
 
 
 
@@ -92,7 +92,7 @@ for bldg in bldgs:
 
     ax2.plot(time_hour, hour['hotWaterUse'],'-', color='red', linewidth=3, zorder =1, label='Hot Water Use')
     ax2.plot(time_hour, hour['coldWaterUse'],'-', color='blue', linewidth=3, zorder=2, label= 'Cold Water Use')
-    ax2.set_ylabel('Water Use (m^3)', fontsize=18)
+    ax2.set_ylabel('Water Use ($m^3$)', fontsize=18)
     ax2.set_ylim(0,)
     plt.tick_params(labelsize='large')
     ax2.legend(loc = 2, fontsize=14)
@@ -101,7 +101,7 @@ for bldg in bldgs:
     fig1.tight_layout()
 
     print('Saving figure...')
-    plt.savefig('W-WRE_hourlyAvgUse_'+bldg+'.png')
+    #plt.savefig('W-WRE_hourlyAvgUse_'+bldg+'.png')
 
     plt.show()
 
@@ -115,7 +115,7 @@ for bldg in bldgs:
     ax2.fill_between(time_hour, energy['diff_HS-pipe'],energy['hotReturn_energy'],  color='darkorange', alpha=0.75)
     ax2.fill_between(time_hour, 0, energy['hotReturn_energy'], color = 'maroon', alpha=0.75)
     ax2.set_ylabel('Energy Use (MJ)', fontsize=18)
-    ax2.set_ylim(0,)
+    ax2.set_ylim(0,200)
     ax2.set_xlim('1am', '12am')
     ax2.grid(which='both', axis='x', color='grey', linewidth='1', alpha=0.5)
     ax2.set_xlabel('Time', fontsize=18)
@@ -131,7 +131,7 @@ for bldg in bldgs:
     ax2.legend(handles = legend_elements,loc=4,fontsize=14)
     fig2.tight_layout()
 
-    plt.savefig('WRE_hourlyAvgUse_'+bldg+'.png')
+   # plt.savefig('WRE_hourlyAvgUse_'+bldg+'.png')
 
     plt.show()
 
