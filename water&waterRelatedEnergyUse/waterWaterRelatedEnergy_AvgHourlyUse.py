@@ -71,43 +71,32 @@ for bldg in bldgs:
 
     fig1, ax1 = plt.subplots(figsize=(14,8))
 
-    ax1.plot(time_hour, hour['hotUse_energy'], '--', color='darkorange', label = 'Water-Related\nEnergy Use')
-    ax1.fill_between(time_hour, 0, hour['hotUse_energy'], color='darkorange', alpha=0.75)
-    ax1.set_ylabel('Energy Use (MJ)', fontsize=18)
+    ax1.plot(time_hour, hour['hotWaterUse'], color='red', label = 'Hot Water Use', linewidth=3)
+    ax1.plot(time_hour, hour['coldWaterUse'], color='blue', label = 'Cold Water Use', linewidth=3)
+    ax1.set_ylabel('Water Use ($m^3$)', fontsize=18)
     ax1.set_xlim('1am','12am')
-    ax1.set_ylim(0,)
+    ax1.set_ylim(0,0.4)
     ax1.set_xlim('1am', '12am')
     ax1.grid(which='both', axis='x', color='grey', linewidth='1', alpha=0.5)
     ax1.set_xlabel('Time', fontsize=18)
-    #ax1.set_title('Avg. Hourly Water & Water Related Energy Use: Building '+bldg)
     plt.tick_params(labelsize='large')
     plt.xticks(fontsize=14, rotation=35)
     plt.yticks(fontsize=14)
 
-    legend_elements=[Patch(facecolor='darkorange', edgecolor='grey', label='Water-Related\nEnergy Use')]
-    ax1.legend(handles = legend_elements, loc=4, fontsize=14)
+    plt.text('2am',0.35, bldg, fontsize = 30, fontweight='bold')
 
-    ax2 = ax1.twinx()
-
-
-    ax2.plot(time_hour, hour['hotWaterUse'],'-', color='red', linewidth=3, zorder =1, label='Hot Water Use')
-    ax2.plot(time_hour, hour['coldWaterUse'],'-', color='blue', linewidth=3, zorder=2, label= 'Cold Water Use')
-    ax2.set_ylabel('Water Use ($m^3$)', fontsize=18)
-    ax2.set_ylim(0,)
-    plt.tick_params(labelsize='large')
-    ax2.legend(loc = 2, fontsize=14)
 
 
     fig1.tight_layout()
 
     print('Saving figure...')
-    #plt.savefig('W-WRE_hourlyAvgUse_'+bldg+'.png')
+    plt.savefig('W-WRE_hourlyAvgUse_'+bldg+'.png')
 
     plt.show()
 
     fig2, ax2 = plt.subplots(figsize=(14,8))
 
-    ax2.plot(time_hour, energy['hotSupply_energy'], color='red')
+    ax2.plot(time_hour, energy['hotSupply_energy'], color='red', linewidth=4)
     ax2.plot(time_hour, energy['diff_HS-pipe'],color='black')
     #ax2.plot(time_hour, energy['diff_HS-WW'], color='darkorange')
     ax2.plot(time_hour, energy['hotReturn_energy'], color='maroon')
@@ -115,7 +104,7 @@ for bldg in bldgs:
     ax2.fill_between(time_hour, energy['diff_HS-pipe'],energy['hotReturn_energy'],  color='darkorange', alpha=0.75)
     ax2.fill_between(time_hour, 0, energy['hotReturn_energy'], color = 'maroon', alpha=0.75)
     ax2.set_ylabel('Energy Use (MJ)', fontsize=18)
-    ax2.set_ylim(0,200)
+    ax2.set_ylim(0,250)
     ax2.set_xlim('1am', '12am')
     ax2.grid(which='both', axis='x', color='grey', linewidth='1', alpha=0.5)
     ax2.set_xlabel('Time', fontsize=18)
@@ -123,6 +112,7 @@ for bldg in bldgs:
     plt.xticks(fontsize=14,rotation=35)
     plt.yticks(fontsize=14)
 
+    plt.text('2am', 225, bldg, fontsize=30, fontweight='bold')
 
     legend_elements = [Line2D([0], [0], color = 'red', lw=2, label='Energy supplied to building'),
                        Patch(facecolor='black', edgecolor='grey', label='Energy lost to pipe'),
@@ -131,7 +121,7 @@ for bldg in bldgs:
     ax2.legend(handles = legend_elements,loc=4,fontsize=14)
     fig2.tight_layout()
 
-   # plt.savefig('WRE_hourlyAvgUse_'+bldg+'.png')
+    plt.savefig('WRE_hourlyAvgUse_'+bldg+'.png')
 
     plt.show()
 

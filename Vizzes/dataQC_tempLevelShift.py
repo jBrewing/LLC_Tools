@@ -1,6 +1,7 @@
 import pandas as pd
 from influxdb import InfluxDBClient
 import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 import numpy as np
 import os
 
@@ -59,10 +60,12 @@ ax.plot(df['hotOutTemp'], '--', color='maroon', label='Raw Return')
 ax.set_ylabel('Temp (oC)', fontsize = 18, weight = 'bold')
 ax.set_xlabel('Date', fontsize=18, weight='bold')
 ax.set_ylim(44,56)
+ax.xaxis.set_major_formatter(mdates.DateFormatter("%T"))
 ax.legend(fontsize=14, ncol=2)
 plt.yticks(fontsize=14)
 plt.xticks(fontsize=14, rotation = 20)
 plt.tight_layout(pad=5, w_pad=2, h_pad=2.5)
+
 
 print('saving fig...')
 plt.savefig('dataQC_tempLevelShift-hot.png')

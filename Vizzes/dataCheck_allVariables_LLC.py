@@ -27,8 +27,8 @@ print('Receiving inputs...\n')
 bldg = input("Input building ID: ").upper()
 bldgID = "'" + bldg + "'"
 #    dates
-beginDate = "'2019-03-01T00:00:00Z'"
-endDate = "'2019-03-31T00:00:00Z'"
+beginDate = "'2019-03-22T12:00:00Z'"
+endDate = "'2019-04-19T00:00:00Z'"
 data = input("Select data to view [raw/qa]: ").upper()
 
 # use function to get all inputs
@@ -50,6 +50,10 @@ df['time'] = pd.to_datetime(df['time']) # Convert time to pandas datetime format
 df.set_index('time', inplace=True) # Set time as index
 
 print('Data retrieved! \n')
+
+cold = df['coldInTemp'].mean()
+hotIn = df['hotInTemp'].mean()
+hotOut = df['hotOutTemp'].mean()
 
 
 # print final data

@@ -1,6 +1,7 @@
 import pandas as pd
 from influxdb import InfluxDBClient
 import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 import numpy as np
 import os
 
@@ -110,6 +111,7 @@ os.chdir('/Users/augustus/Desktop/GRA/Thesis/Figures/dataQC/')
 
 fig = plt.figure(1, figsize=(14, 10))
 gridsize = (2, 1)
+
 fig.autofmt_xdate()
 
 
@@ -120,7 +122,7 @@ axHotRaw.plot(df['hotInFlowRate'], color='red', label='Raw Data')
 axHotRaw.set_ylabel('GPM', fontsize = 18, weight='bold')
 axHotRaw.set_xlabel('')
 axHotRaw.set_ylim(3,5.25)
-plt.xticks([])
+axHotRaw.tick_params(labelbottom=False)
 plt.yticks(fontsize=14)
 
 # 2nd row - cold in
@@ -131,6 +133,7 @@ axColdRaw.plot(df['coldInFlowRate'], color='blue', label='Filtered Data')
 axColdRaw.set_ylabel('GPM', fontsize=18, weight = 'bold')
 axColdRaw.set_xlabel('Time', fontsize=18, weight='bold')
 #axColdRaw.set_ylim(3,5.25)
+axColdRaw.xaxis.set_major_formatter(mdates.DateFormatter("%T"))
 plt.xticks(fontsize=14)
 plt.yticks(fontsize=14)
 plt.tight_layout(pad=5, w_pad=2, h_pad=2.5)
@@ -138,7 +141,7 @@ plt.tight_layout(pad=5, w_pad=2, h_pad=2.5)
 fig.show()
 
 print('saving fig...')
-plt.savefig('dataQC_noiseReduction-hot.png')
+plt.savefig('dataQC_noiseReduction-raw.png')
 
 
 
@@ -152,7 +155,7 @@ axHotNew.plot(df['new_hotInFlowRate'], color='red', label='Raw Data')
 #axHotNew.set_title('Raw Hot Water Supply Flow Signal', fontsize=18)
 axHotNew.set_ylabel('GPM', fontsize = 18, weight='bold')
 axHotNew.set_xlabel('')
-plt.xticks([])
+axHotNew.tick_params(labelbottom=False)
 plt.yticks(fontsize=14)
 
 # 2nd row - cold in
@@ -164,10 +167,10 @@ axColdNew.set_ylabel('GPM', fontsize=18, weight='bold')
 axColdNew.set_xlabel('Time', fontsize=18, weight='bold')
 plt.xticks(fontsize=14)
 plt.yticks(fontsize=14)
-
+axColdNew.xaxis.set_major_formatter(mdates.DateFormatter("%T"))
 plt.tight_layout(pad=5, w_pad=2, h_pad=2.5)
 print('saving fig...')
-plt.savefig('dataQC_noiseReduction-cold.png')
+plt.savefig('dataQC_noiseReduction-qa.png')
 
 fig.show()
 plt.show()

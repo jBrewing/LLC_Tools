@@ -2,6 +2,7 @@ import pandas as pd
 from influxdb import InfluxDBClient
 from influxdb import DataFrameClient
 import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 import numpy as np
 import os
 
@@ -88,8 +89,8 @@ ax.grid(True)
 
 ax.set_xlim(beginDate, endDate)
 ax.set_ylim(0,)
-ax.set_ylabel('Total MJs', fontsize = 18,fontweight='bold')
-ax.set_xlabel('Time\n(Date)', fontsize=18,fontweight='bold')
+ax.set_ylabel('Cumulative Water-Related\nEnergy Use (MJ)', fontsize = 18,fontweight='bold')
+ax.set_xlabel('Date', fontsize=18,fontweight='bold')
 plt.yticks(fontsize=14)
 plt.xticks(fontsize=14, rotation =25)
 
@@ -117,10 +118,11 @@ ax2.legend( fontsize=14)
 ax2.grid(True)
 ax2.set_xlim("'2019-04-01T00:00:00Z'", "'2019-04-02T00:00:00Z'")
 ax2.set_ylim(2000,3100)
-ax2.set_ylabel('Total MJs', fontsize = 18,fontweight='bold')
-ax2.set_xlabel('Time\n(Date)', fontsize=18,fontweight='bold')
+ax2.set_ylabel('Cumulative Water-Related\nEnergy Use (MJ)', fontsize = 18,fontweight='bold')
+ax2.set_xlabel('Time', fontsize=18,fontweight='bold')
 plt.yticks(fontsize=14)
 plt.xticks(fontsize=14, rotation =25)
+ax2.xaxis.set_major_formatter(mdates.DateFormatter("%T"))
 
 plt.tight_layout(pad=5, w_pad=2, h_pad=2.5)
 

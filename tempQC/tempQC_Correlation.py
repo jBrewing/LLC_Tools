@@ -9,8 +9,8 @@ print('Receiving inputs...\n')
 # Available dates - 2018/10/10 - 2018/11/10
 #       Dates - Do not remove 'T' or 'Z' - required influxDB syntax.
 #       bldgID - Do not remove " " or ' ' - required influxDB syntax
-beginDate = "'2019-03-23T12:00:00Z'"
-endDate = "'2019-03-29T08:00:00Z'"
+beginDate = "'2019-03-23T00:00:00Z'"
+endDate = "'2019-03-30T00:00:00Z'"
 #endDate = str(datetime.now().strftime("'%Y-%m-%dT%H:%M:%SZ'"))
 bldgIDInput1 = 'B'
 bldgIDInput2 = 'D'

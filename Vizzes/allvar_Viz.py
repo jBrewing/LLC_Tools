@@ -33,8 +33,8 @@ var = input("Input variable (case sensitive): ")
 #       Dates - Do not remove 'T' or 'Z' - required influxDB syntax.
 #       bldgID - Do not remove " " or ' ' - required influxDB syntax
 # First Query
-beginDate = "'2019-03-22T12:00:00Z'"
-endDate = "'2019-04-19T12:00:00Z'"
+beginDate = "'2019-03-15T12:00:00Z'"
+endDate = "'2019-03-30T12:00:00Z'"
 #endDate = str(datetime.now().strftime("'%Y-%m-%dT%H:%M:%SZ'"))
 bldgID = input("Input building ID: ").upper()
 bldgIDQuery = "'" + bldgID + "'"
