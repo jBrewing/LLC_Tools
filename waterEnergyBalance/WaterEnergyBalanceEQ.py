@@ -13,7 +13,7 @@ print('Receiving inputs...\n')
 #beginDate = "'2019-03-22T12:00:00Z'"
 #endDate = "'2019-03-24T00:00:00Z'"
 
-bldgs = ['F']
+bldgs = ['B', 'C','D','E','F']
 weeks = [1,2,3,4]
 
 for bldg in bldgs:
