@@ -51,8 +51,9 @@ for bldg in bldgs:
     # Query returns a 'ResultSet" type.  Have to convert to pandas dataframe.
     bldgID = "'" + bldg + "'"
 
+    # Todo: change measurement name
     query = """SELECT *
-               FROM "WaWRE" 
+               FROM "Your-Measurement-here"   
                WHERE "buildingID" ="""+bldgID+""" AND time >= """+begin+""" AND time <= """+end+""""""
 
     print('Retrieving data...')

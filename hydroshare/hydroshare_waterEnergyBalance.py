@@ -49,8 +49,10 @@ for bldg in bldgs:
     # Build query by concatenating inputs into query.  InfluxDB query language has several
     # requirements.  Fields/Tags must be bracketed with " " and the field/tag values must be bracketed with ' '.
     # Query returns a 'ResultSet" type.
+
+    # Todo: change measurement name
     query = """SELECT * 
-            FROM "LLC" 
+            FROM "Your-Measurement-Here" 
             WHERE "buildingID" ="""+bldgID+""" AND time >= """+begin+""" AND time <= """+end+""""""
 
     print('Retrieving data...')

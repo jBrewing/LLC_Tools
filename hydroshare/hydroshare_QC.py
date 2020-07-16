@@ -109,8 +109,9 @@ for bldg in bldgs:  # loop through list of bldgs to QC all data
     # requirements.  Fields/Tags must be bracketed with " " and the field/tag values must be bracketed with ' '.
     # Query returns a 'ResultSet" type.
 
+    # Todo: change measurement name
     query = """SELECT *
-      FROM "flow"
+      FROM "Your-Raw-Measurment-Here"
       WHERE "buildingID" =""" + bldgID + """ AND time >= """ + begin + """ AND time <= """ + end + """"""
 
     print('Retrieving data...')
